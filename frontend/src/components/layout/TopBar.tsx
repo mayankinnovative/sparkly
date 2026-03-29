@@ -1,10 +1,26 @@
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/auth';
 import { Badge } from '@/components/ui/badge';
-import { Globe, MapPin } from 'lucide-react';
-// types inferred from store
+import { Globe, MapPin, Building2 } from 'lucide-react';
+import api from '@/lib/api';
+import type { Account } from '@/types';
 
 export function TopBar() {
-  const { user, account, province, language, setProvince, setLanguage } = useAuthStore();
+  const { user, account, province, language, selectedAccountId, setProvince, setLanguage, setSelectedAccountId } = useAuthStore();
+  const isSuperAdmin = user?.role === 'super_admin';
+  const [accounts, setAccounts] = useState<Account[]>([]);
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      api.get('/admin/accounts').then(({ data }) => {
+        const list = (data.data?.accounts || data.data || []) as Account[];
+        setAccounts(list);
+        if (!selectedAccountId && list.length > 0) {
+          setSelectedAccountId(list[0].id);
+        }
+      }).catch(console.error);
+    }
+  }, [isSuperAdmin]);
 
   const toggleLanguage = () => {
     setLanguage(language === 'en' ? 'fr' : 'en');
@@ -14,14 +30,36 @@ export function TopBar() {
     setProvince(province === 'QC' ? 'ON' : 'QC');
   };
 
+  const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
+  const displayName = isSuperAdmin
+    ? (selectedAccount?.businessName || 'All Accounts')
+    : (account?.businessName || 'Sparkly');
+  const displayPlan = isSuperAdmin ? selectedAccount?.plan : account?.plan;
+
   return (
     <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-10">
       <div className="flex items-center gap-3">
-        <h2 className="text-lg font-semibold text-gray-800">
-          {account?.businessName || 'Sparkly'}
-        </h2>
-        {account?.plan && (
-          <Badge variant="info" className="capitalize">{account.plan}</Badge>
+        {isSuperAdmin && accounts.length > 0 ? (
+          <div className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-sparkly-blue" />
+            <select
+              value={selectedAccountId || ''}
+              onChange={(e) => setSelectedAccountId(e.target.value || null)}
+              className="text-lg font-semibold text-gray-800 bg-transparent border-none outline-none cursor-pointer pr-2"
+            >
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>{a.businessName}</option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <h2 className="text-lg font-semibold text-gray-800">{displayName}</h2>
+        )}
+        {displayPlan && (
+          <Badge variant="info" className="capitalize">{displayPlan}</Badge>
+        )}
+        {isSuperAdmin && (
+          <Badge variant="destructive" className="text-xs">Super Admin</Badge>
         )}
       </div>
 

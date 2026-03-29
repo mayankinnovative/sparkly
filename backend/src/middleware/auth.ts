@@ -24,6 +24,15 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
 
   try {
     const payload = jwt.verify(token, config.jwt.accessSecret) as TokenPayload;
+
+    // Allow super_admin to set account context via header
+    if (payload.role === 'super_admin' && !payload.accountId) {
+      const ctxAccount = req.headers['x-account-id'];
+      if (ctxAccount && typeof ctxAccount === 'string') {
+        payload.accountId = ctxAccount;
+      }
+    }
+
     req.user = payload;
     next();
   } catch {

@@ -32,8 +32,9 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const navigate = useNavigate();
-  const { account, language, logout } = useAuthStore();
+  const { user, account, language, logout } = useAuthStore();
   const lang = language as Language;
+  const isSuperAdmin = user?.role === 'super_admin';
   const currentPlan = account?.plan;
 
   const handleLogout = () => {
@@ -57,7 +58,7 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
         {navItems.map((item) => {
-          const locked = item.requiredPlan && !hasPlanAccess(currentPlan, item.requiredPlan);
+          const locked = item.requiredPlan && !isSuperAdmin && !hasPlanAccess(currentPlan, item.requiredPlan);
           const Icon = item.icon;
 
           return (

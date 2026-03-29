@@ -7,9 +7,13 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const { accessToken, user, selectedAccountId } = useAuthStore.getState();
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+  // Send account context header for super_admin
+  if (user?.role === 'super_admin' && selectedAccountId) {
+    config.headers['x-account-id'] = selectedAccountId;
   }
   return config;
 });
