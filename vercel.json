@@ -16,7 +16,7 @@
   "crons": [
     {
       "path": "/api/v1/cron/recurring-jobs",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 0 * * *"
     }
   ],
   "headers": [
