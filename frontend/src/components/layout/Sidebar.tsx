@@ -32,7 +32,7 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const navigate = useNavigate();
-  const { user, account, language, logout } = useAuthStore();
+  const { account, language, logout } = useAuthStore();
   const lang = language as Language;
   const currentPlan = account?.plan;
 

@@ -1,7 +1,7 @@
 import { useAuthStore } from '@/store/auth';
 import { Badge } from '@/components/ui/badge';
 import { Globe, MapPin } from 'lucide-react';
-import type { Language, Province } from '@/types';
+// types inferred from store
 
 export function TopBar() {
   const { user, account, province, language, setProvince, setLanguage } = useAuthStore();
