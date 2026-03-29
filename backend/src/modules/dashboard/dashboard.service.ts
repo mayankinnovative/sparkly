@@ -1,23 +1,29 @@
 import prisma from '../../config/database';
 
+// Helper: build tenant filter — omit accountId for super_admin (null)
+function tenantFilter(accountId: string | null) {
+  return accountId ? { accountId } : {};
+}
+
 export class DashboardService {
-  async getOverview(accountId: string, from: string, to: string) {
+  async getOverview(accountId: string | null, from: string, to: string) {
     const startDate = new Date(from);
     const endDate = new Date(to);
+    const tenant = tenantFilter(accountId);
 
     const [jobs, expenses, invoices, payroll] = await Promise.all([
       prisma.job.findMany({
-        where: { accountId, scheduledDate: { gte: startDate, lte: endDate } },
+        where: { ...tenant, scheduledDate: { gte: startDate, lte: endDate } },
       }),
       prisma.expense.findMany({
-        where: { accountId, date: { gte: startDate, lte: endDate } },
+        where: { ...tenant, date: { gte: startDate, lte: endDate } },
       }),
       prisma.invoice.findMany({
-        where: { accountId, createdAt: { gte: startDate, lte: endDate } },
+        where: { ...tenant, createdAt: { gte: startDate, lte: endDate } },
       }),
       prisma.payrollEntry.findMany({
         where: {
-          accountId,
+          ...tenant,
           payPeriodStart: { gte: startDate },
           payPeriodEnd: { lte: endDate },
         },
@@ -53,10 +59,10 @@ export class DashboardService {
     };
   }
 
-  async getMonthlyRevenue(accountId: string, year: number) {
+  async getMonthlyRevenue(accountId: string | null, year: number) {
     const jobs = await prisma.job.findMany({
       where: {
-        accountId,
+        ...tenantFilter(accountId),
         status: 'completed',
         completedAt: {
           gte: new Date(`${year}-01-01`),
@@ -79,10 +85,10 @@ export class DashboardService {
     }));
   }
 
-  async getTopClients(accountId: string, from: string, to: string, limit = 5) {
+  async getTopClients(accountId: string | null, from: string, to: string, limit = 5) {
     const jobs = await prisma.job.findMany({
       where: {
-        accountId,
+        ...tenantFilter(accountId),
         status: 'completed',
         completedAt: { gte: new Date(from), lte: new Date(to) },
       },
@@ -105,10 +111,10 @@ export class DashboardService {
       .slice(0, limit);
   }
 
-  async getTaxSummary(accountId: string, from: string, to: string) {
+  async getTaxSummary(accountId: string | null, from: string, to: string) {
     const invoices = await prisma.invoice.findMany({
       where: {
-        accountId,
+        ...tenantFilter(accountId),
         createdAt: { gte: new Date(from), lte: new Date(to) },
         status: { not: 'cancelled' },
       },

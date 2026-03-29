@@ -3,7 +3,6 @@ import { authenticate } from '../../middleware/auth';
 import { tenantScope } from '../../middleware/tenantScope';
 import { dashboardService } from './dashboard.service';
 import { successResponse, errorResponse } from '../../utils/response';
-import { AuthenticatedRequest } from '../../types';
 
 const router = Router();
 
@@ -11,7 +10,7 @@ router.use(authenticate, tenantScope);
 
 router.get('/overview', async (req, res) => {
   try {
-    const { accountId } = (req as AuthenticatedRequest).user!;
+    const accountId = req.user!.accountId;
     const { from, to } = req.query as any;
     if (!from || !to) {
       return res.status(400).json(errorResponse('from and to are required', 'MISSING_PARAMS'));
@@ -26,7 +25,7 @@ router.get('/overview', async (req, res) => {
 
 router.get('/monthly-revenue', async (req, res) => {
   try {
-    const { accountId } = (req as AuthenticatedRequest).user!;
+    const accountId = req.user!.accountId;
     const year = parseInt(req.query.year as string, 10) || new Date().getFullYear();
     const data = await dashboardService.getMonthlyRevenue(accountId, year);
     res.json(successResponse(data));
@@ -38,7 +37,7 @@ router.get('/monthly-revenue', async (req, res) => {
 
 router.get('/top-clients', async (req, res) => {
   try {
-    const { accountId } = (req as AuthenticatedRequest).user!;
+    const accountId = req.user!.accountId;
     const { from, to, limit } = req.query as any;
     if (!from || !to) {
       return res.status(400).json(errorResponse('from and to are required', 'MISSING_PARAMS'));
@@ -53,7 +52,7 @@ router.get('/top-clients', async (req, res) => {
 
 router.get('/tax-summary', async (req, res) => {
   try {
-    const { accountId } = (req as AuthenticatedRequest).user!;
+    const accountId = req.user!.accountId;
     const { from, to } = req.query as any;
     if (!from || !to) {
       return res.status(400).json(errorResponse('from and to are required', 'MISSING_PARAMS'));
