@@ -1,0 +1,35 @@
+# dependencies
+node_modules/
+
+# environment
+.env
+.env.local
+.env.*.local
+
+# build
+dist/
+
+# prisma
+prisma/*.db
+prisma/*.db-journal
+
+# vercel
+.vercel/
+
+# editor
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# logs
+*.log
+npm-debug.log*
+
+# misc
+.pg/
