@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "installCommand": "npm install && npm install --prefix backend && npm install --prefix frontend",
-  "buildCommand": "npx prisma generate --schema=backend/prisma/schema.prisma && cd frontend && npm run build",
+  "installCommand": "npm install && cd backend && npm install && cd ../frontend && npm install --include=dev",
+  "buildCommand": "cd backend && npx prisma generate && cd ../frontend && npx vite build",
   "outputDirectory": "frontend/dist",
   "functions": {
     "api/index.ts": {
