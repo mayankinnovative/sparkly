@@ -1,11 +1,11 @@
 import prisma from '../../config/database';
-import { AppError } from '../../utils/response';
+import { AppError, tenantFilter, requireAccountId } from '../../utils/response';
 import { CreatePayrollEntryInput, UpdatePayrollEntryInput } from './payroll.schema';
 import { calculateDeductions, PayrollDeductions } from './tax-engine';
 
 export class PayrollService {
-  async list(accountId: string, filters?: { userId?: string; from?: string; to?: string }) {
-    const where: any = { accountId };
+  async list(accountId: string | null, filters?: { userId?: string; from?: string; to?: string }) {
+    const where: any = { ...tenantFilter(accountId) };
     if (filters?.userId) where.userId = filters.userId;
     if (filters?.from || filters?.to) {
       where.payPeriodStart = {};
@@ -20,18 +20,19 @@ export class PayrollService {
     });
   }
 
-  async getById(accountId: string, id: string) {
+  async getById(accountId: string | null, id: string) {
     const entry = await prisma.payrollEntry.findFirst({
-      where: { id, accountId },
+      where: { id, ...tenantFilter(accountId) },
       include: { user: { select: { id: true, firstName: true, lastName: true, role: true } } },
     });
     if (!entry) throw new AppError(404, 'Payroll entry not found', 'NOT_FOUND');
     return entry;
   }
 
-  async create(accountId: string, input: CreatePayrollEntryInput) {
+  async create(accountId: string | null, input: CreatePayrollEntryInput) {
+    const aid = requireAccountId(accountId);
     const user = await prisma.user.findFirst({
-      where: { id: input.userId, accountId, isActive: true },
+      where: { id: input.userId, accountId: aid, isActive: true },
     });
     if (!user) throw new AppError(404, 'User not found', 'USER_NOT_FOUND');
 
@@ -40,7 +41,7 @@ export class PayrollService {
 
     return prisma.payrollEntry.create({
       data: {
-        accountId,
+        accountId: aid,
         userId: input.userId,
         payPeriodStart: new Date(input.payPeriodStart),
         payPeriodEnd: new Date(input.payPeriodEnd),
@@ -62,8 +63,9 @@ export class PayrollService {
     });
   }
 
-  async update(accountId: string, id: string, input: UpdatePayrollEntryInput) {
-    const entry = await prisma.payrollEntry.findFirst({ where: { id, accountId } });
+  async update(accountId: string | null, id: string, input: UpdatePayrollEntryInput) {
+    const aid = requireAccountId(accountId);
+    const entry = await prisma.payrollEntry.findFirst({ where: { id, accountId: aid } });
     if (!entry) throw new AppError(404, 'Payroll entry not found', 'NOT_FOUND');
 
     const hours = input.hours ?? entry.hours.toNumber();
@@ -91,8 +93,9 @@ export class PayrollService {
     });
   }
 
-  async delete(accountId: string, id: string) {
-    const entry = await prisma.payrollEntry.findFirst({ where: { id, accountId } });
+  async delete(accountId: string | null, id: string) {
+    const aid = requireAccountId(accountId);
+    const entry = await prisma.payrollEntry.findFirst({ where: { id, accountId: aid } });
     if (!entry) throw new AppError(404, 'Payroll entry not found', 'NOT_FOUND');
     await prisma.payrollEntry.delete({ where: { id } });
   }
@@ -103,10 +106,10 @@ export class PayrollService {
   }
 
   /** Remittance summary for a date range */
-  async remittanceSummary(accountId: string, from: string, to: string) {
+  async remittanceSummary(accountId: string | null, from: string, to: string) {
     const entries = await prisma.payrollEntry.findMany({
       where: {
-        accountId,
+        ...tenantFilter(accountId),
         payPeriodStart: { gte: new Date(from) },
         payPeriodEnd: { lte: new Date(to) },
       },

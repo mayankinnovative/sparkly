@@ -16,7 +16,7 @@ router.get(
   requireRole('account_owner'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const users = await usersService.list(req.user!.accountId!);
+      const users = await usersService.list(req.user!.accountId);
       res.json(successResponse(users));
     } catch (error) { next(error); }
   }
@@ -30,7 +30,7 @@ router.get(
       if (!isSelf && req.user!.role !== 'account_owner' && req.user!.role !== 'super_admin') {
         return res.status(403).json({ success: false, data: null, message: 'Insufficient permissions', error: { code: 'INSUFFICIENT_ROLE' } });
       }
-      const user = await usersService.getById(req.user!.accountId!, req.params.id as string);
+      const user = await usersService.getById(req.user!.accountId, req.params.id as string);
       res.json(successResponse(user));
     } catch (error) { next(error); }
   }
@@ -42,7 +42,7 @@ router.post(
   validate(createUserSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const user = await usersService.create(req.user!.accountId!, req.body);
+      const user = await usersService.create(req.user!.accountId, req.body);
       res.status(201).json(successResponse(user, 'User created'));
     } catch (error) { next(error); }
   }
@@ -54,7 +54,7 @@ router.patch(
   validate(updateUserSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const user = await usersService.update(req.user!.accountId!, req.params.id as string, req.body);
+      const user = await usersService.update(req.user!.accountId, req.params.id as string, req.body);
       res.json(successResponse(user, 'User updated'));
     } catch (error) { next(error); }
   }
@@ -65,7 +65,7 @@ router.delete(
   requireRole('account_owner'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await usersService.deactivate(req.user!.accountId!, req.params.id as string);
+      await usersService.deactivate(req.user!.accountId, req.params.id as string);
       res.status(204).send();
     } catch (error) { next(error); }
   }

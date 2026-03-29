@@ -1,5 +1,5 @@
 import prisma from '../../config/database';
-import { AppError } from '../../utils/response';
+import { AppError, tenantFilter, requireAccountId } from '../../utils/response';
 import { CreateInvoiceInput, UpdateInvoiceInput } from './invoices.schema';
 import Stripe from 'stripe';
 import { config } from '../../config';
@@ -20,8 +20,8 @@ function generateInvoiceNumber(): string {
 }
 
 export class InvoicesService {
-  async list(accountId: string, filters?: { status?: string; customerId?: string }) {
-    const where: any = { accountId };
+  async list(accountId: string | null, filters?: { status?: string; customerId?: string }) {
+    const where: any = { ...tenantFilter(accountId) };
     if (filters?.status) where.status = filters.status;
     if (filters?.customerId) where.customerId = filters.customerId;
 
@@ -35,9 +35,9 @@ export class InvoicesService {
     });
   }
 
-  async getById(accountId: string, id: string) {
+  async getById(accountId: string | null, id: string) {
     const invoice = await prisma.invoice.findFirst({
-      where: { id, accountId },
+      where: { id, ...tenantFilter(accountId) },
       include: {
         customer: true,
         paymentLink: true,
@@ -47,16 +47,17 @@ export class InvoicesService {
     return invoice;
   }
 
-  async create(accountId: string, input: CreateInvoiceInput) {
+  async create(accountId: string | null, input: CreateInvoiceInput) {
+    const aid = requireAccountId(accountId);
     // Verify customer
     const customer = await prisma.customer.findFirst({
-      where: { id: input.customerId, accountId, isActive: true },
+      where: { id: input.customerId, accountId: aid, isActive: true },
     });
     if (!customer) throw new AppError(404, 'Customer not found', 'CUSTOMER_NOT_FOUND');
 
     // Fetch jobs and calculate subtotal
     const jobs = await prisma.job.findMany({
-      where: { id: { in: input.jobIds }, accountId },
+      where: { id: { in: input.jobIds }, accountId: aid },
     });
     if (jobs.length !== input.jobIds.length) {
       throw new AppError(400, 'Some jobs not found', 'JOBS_NOT_FOUND');
@@ -77,7 +78,7 @@ export class InvoicesService {
 
     return prisma.invoice.create({
       data: {
-        accountId,
+        accountId: aid,
         customerId: input.customerId,
         invoiceNo: generateInvoiceNumber(),
         lineItems,
@@ -93,8 +94,9 @@ export class InvoicesService {
     });
   }
 
-  async update(accountId: string, id: string, input: UpdateInvoiceInput) {
-    const invoice = await prisma.invoice.findFirst({ where: { id, accountId } });
+  async update(accountId: string | null, id: string, input: UpdateInvoiceInput) {
+    const aid = requireAccountId(accountId);
+    const invoice = await prisma.invoice.findFirst({ where: { id, accountId: aid } });
     if (!invoice) throw new AppError(404, 'Invoice not found', 'NOT_FOUND');
 
     const data: any = { ...input };
@@ -103,9 +105,10 @@ export class InvoicesService {
     return prisma.invoice.update({ where: { id }, data });
   }
 
-  async createPaymentLink(accountId: string, invoiceId: string) {
+  async createPaymentLink(accountId: string | null, invoiceId: string) {
+    const aid = requireAccountId(accountId);
     const invoice = await prisma.invoice.findFirst({
-      where: { id: invoiceId, accountId },
+      where: { id: invoiceId, accountId: aid },
       include: { customer: true },
     });
     if (!invoice) throw new AppError(404, 'Invoice not found', 'NOT_FOUND');

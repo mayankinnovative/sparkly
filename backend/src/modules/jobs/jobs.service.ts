@@ -1,10 +1,10 @@
 import prisma from '../../config/database';
-import { AppError } from '../../utils/response';
+import { AppError, tenantFilter, requireAccountId } from '../../utils/response';
 import { CreateJobInput, UpdateJobInput } from './jobs.schema';
 
 export class JobsService {
-  async list(accountId: string, filters?: { status?: string; customerId?: string; assignedToId?: string; from?: string; to?: string }) {
-    const where: any = { accountId };
+  async list(accountId: string | null, filters?: { status?: string; customerId?: string; assignedToId?: string; from?: string; to?: string }) {
+    const where: any = { ...tenantFilter(accountId) };
 
     if (filters?.status) where.status = filters.status;
     if (filters?.customerId) where.customerId = filters.customerId;
@@ -25,9 +25,9 @@ export class JobsService {
     });
   }
 
-  async getById(accountId: string, id: string) {
+  async getById(accountId: string | null, id: string) {
     const job = await prisma.job.findFirst({
-      where: { id, accountId },
+      where: { id, ...tenantFilter(accountId) },
       include: {
         customer: { select: { id: true, name: true, email: true, phone: true } },
         assignee: { select: { id: true, firstName: true, lastName: true } },
@@ -37,17 +37,16 @@ export class JobsService {
     return job;
   }
 
-  async create(accountId: string, input: CreateJobInput) {
-    // Verify customer belongs to account
+  async create(accountId: string | null, input: CreateJobInput) {
+    const aid = requireAccountId(accountId);
     const customer = await prisma.customer.findFirst({
-      where: { id: input.customerId, accountId, isActive: true },
+      where: { id: input.customerId, accountId: aid, isActive: true },
     });
     if (!customer) throw new AppError(404, 'Customer not found', 'CUSTOMER_NOT_FOUND');
 
-    // Verify assigned user if provided
     if (input.assignedTo) {
       const user = await prisma.user.findFirst({
-        where: { id: input.assignedTo, accountId, isActive: true },
+        where: { id: input.assignedTo, accountId: aid, isActive: true },
       });
       if (!user) throw new AppError(404, 'Assigned user not found', 'USER_NOT_FOUND');
     }
@@ -57,7 +56,7 @@ export class JobsService {
         ...input,
         scheduledDate: input.scheduledDate ? new Date(input.scheduledDate) : undefined,
         completedAt: input.completedAt ? new Date(input.completedAt) : null,
-        accountId,
+        accountId: aid,
       },
       include: {
         customer: { select: { id: true, name: true } },
@@ -66,8 +65,9 @@ export class JobsService {
     });
   }
 
-  async update(accountId: string, id: string, input: UpdateJobInput) {
-    const job = await prisma.job.findFirst({ where: { id, accountId } });
+  async update(accountId: string | null, id: string, input: UpdateJobInput) {
+    const aid = requireAccountId(accountId);
+    const job = await prisma.job.findFirst({ where: { id, accountId: aid } });
     if (!job) throw new AppError(404, 'Job not found', 'NOT_FOUND');
 
     const data: any = { ...input };
@@ -84,15 +84,17 @@ export class JobsService {
     });
   }
 
-  async delete(accountId: string, id: string) {
-    const job = await prisma.job.findFirst({ where: { id, accountId } });
+  async delete(accountId: string | null, id: string) {
+    const aid = requireAccountId(accountId);
+    const job = await prisma.job.findFirst({ where: { id, accountId: aid } });
     if (!job) throw new AppError(404, 'Job not found', 'NOT_FOUND');
 
     await prisma.job.delete({ where: { id } });
   }
 
-  async markCompleted(accountId: string, id: string) {
-    const job = await prisma.job.findFirst({ where: { id, accountId } });
+  async markCompleted(accountId: string | null, id: string) {
+    const aid = requireAccountId(accountId);
+    const job = await prisma.job.findFirst({ where: { id, accountId: aid } });
     if (!job) throw new AppError(404, 'Job not found', 'NOT_FOUND');
 
     return prisma.job.update({

@@ -1,9 +1,5 @@
 import prisma from '../../config/database';
-
-// Helper: build tenant filter — omit accountId for super_admin (null)
-function tenantFilter(accountId: string | null) {
-  return accountId ? { accountId } : {};
-}
+import { tenantFilter } from '../../utils/response';
 
 export class DashboardService {
   async getOverview(accountId: string | null, from: string, to: string) {

@@ -22,3 +22,14 @@ export class AppError extends Error {
     this.name = 'AppError';
   }
 }
+
+/** Build tenant filter — omit accountId for super_admin (null) so query returns all accounts */
+export function tenantFilter(accountId: string | null): { accountId: string } | {} {
+  return accountId ? { accountId } : {};
+}
+
+/** Require accountId for write operations — throws 403 for super_admin */
+export function requireAccountId(accountId: string | null): string {
+  if (!accountId) throw new AppError(403, 'Account context required for this operation', 'NO_ACCOUNT_CONTEXT');
+  return accountId;
+}

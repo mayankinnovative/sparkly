@@ -1,5 +1,5 @@
 import prisma from '../../config/database';
-import { AppError } from '../../utils/response';
+import { AppError, tenantFilter, requireAccountId } from '../../utils/response';
 import { CreateRecurringJobInput, UpdateRecurringJobInput } from './recurring-jobs.schema';
 import { logger } from '../../config/logger';
 
@@ -20,9 +20,9 @@ function computeNextRunDate(current: Date, frequency: 'daily' | 'weekly' | 'mont
 }
 
 export class RecurringJobsService {
-  async list(accountId: string) {
+  async list(accountId: string | null) {
     return prisma.recurringJob.findMany({
-      where: { accountId },
+      where: { ...tenantFilter(accountId) },
       include: {
         customer: { select: { id: true, name: true } },
         _count: { select: { schedulerLogs: true } },
@@ -31,9 +31,9 @@ export class RecurringJobsService {
     });
   }
 
-  async getById(accountId: string, id: string) {
+  async getById(accountId: string | null, id: string) {
     const rj = await prisma.recurringJob.findFirst({
-      where: { id, accountId },
+      where: { id, ...tenantFilter(accountId) },
       include: {
         customer: { select: { id: true, name: true } },
         schedulerLogs: { orderBy: { executedAt: 'desc' }, take: 10 },
@@ -43,15 +43,16 @@ export class RecurringJobsService {
     return rj;
   }
 
-  async create(accountId: string, input: CreateRecurringJobInput) {
+  async create(accountId: string | null, input: CreateRecurringJobInput) {
+    const aid = requireAccountId(accountId);
     const customer = await prisma.customer.findFirst({
-      where: { id: input.customerId, accountId, isActive: true },
+      where: { id: input.customerId, accountId: aid, isActive: true },
     });
     if (!customer) throw new AppError(404, 'Customer not found', 'CUSTOMER_NOT_FOUND');
 
     if (input.assignedTo) {
       const user = await prisma.user.findFirst({
-        where: { id: input.assignedTo, accountId, isActive: true },
+        where: { id: input.assignedTo, accountId: aid, isActive: true },
       });
       if (!user) throw new AppError(404, 'Assigned user not found', 'USER_NOT_FOUND');
     }
@@ -60,14 +61,15 @@ export class RecurringJobsService {
       data: {
         ...input,
         nextRun: new Date(input.nextRun),
-        accountId,
+        accountId: aid,
         status: 'active',
       },
     });
   }
 
-  async update(accountId: string, id: string, input: UpdateRecurringJobInput) {
-    const rj = await prisma.recurringJob.findFirst({ where: { id, accountId } });
+  async update(accountId: string | null, id: string, input: UpdateRecurringJobInput) {
+    const aid = requireAccountId(accountId);
+    const rj = await prisma.recurringJob.findFirst({ where: { id, accountId: aid } });
     if (!rj) throw new AppError(404, 'Recurring job not found', 'NOT_FOUND');
 
     const data: any = { ...input };
@@ -76,8 +78,9 @@ export class RecurringJobsService {
     return prisma.recurringJob.update({ where: { id }, data });
   }
 
-  async cancel(accountId: string, id: string) {
-    const rj = await prisma.recurringJob.findFirst({ where: { id, accountId } });
+  async cancel(accountId: string | null, id: string) {
+    const aid = requireAccountId(accountId);
+    const rj = await prisma.recurringJob.findFirst({ where: { id, accountId: aid } });
     if (!rj) throw new AppError(404, 'Recurring job not found', 'NOT_FOUND');
 
     return prisma.recurringJob.update({

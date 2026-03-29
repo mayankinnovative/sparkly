@@ -1,12 +1,12 @@
 import bcrypt from 'bcryptjs';
 import prisma from '../../config/database';
-import { AppError } from '../../utils/response';
+import { AppError, tenantFilter, requireAccountId } from '../../utils/response';
 import { CreateUserInput, UpdateUserInput } from './users.schema';
 
 export class UsersService {
-  async list(accountId: string) {
+  async list(accountId: string | null) {
     return prisma.user.findMany({
-      where: { accountId },
+      where: { ...tenantFilter(accountId) },
       select: {
         id: true,
         email: true,
@@ -20,9 +20,9 @@ export class UsersService {
     });
   }
 
-  async getById(accountId: string, userId: string) {
+  async getById(accountId: string | null, userId: string) {
     const user = await prisma.user.findFirst({
-      where: { id: userId, accountId },
+      where: { id: userId, ...tenantFilter(accountId) },
       select: {
         id: true,
         email: true,
@@ -38,9 +38,10 @@ export class UsersService {
     return user;
   }
 
-  async create(accountId: string, input: CreateUserInput) {
+  async create(accountId: string | null, input: CreateUserInput) {
+    const aid = requireAccountId(accountId);
     // Check plan limits
-    const account = await prisma.account.findUnique({ where: { id: accountId } });
+    const account = await prisma.account.findUnique({ where: { id: aid } });
     if (!account) throw new AppError(404, 'Account not found', 'NOT_FOUND');
 
     if (input.role === 'staff' && account.plan === 'solo') {
@@ -53,7 +54,7 @@ export class UsersService {
 
     if (input.role === 'staff' && account.plan === 'pro') {
       const staffCount = await prisma.user.count({
-        where: { accountId, role: 'staff', isActive: true },
+        where: { accountId: aid, role: 'staff', isActive: true },
       });
       if (staffCount >= 5) {
         throw new AppError(403, 'Pro plan allows up to 5 staff users', 'STAFF_LIMIT');
@@ -72,7 +73,7 @@ export class UsersService {
         firstName: input.firstName,
         lastName: input.lastName,
         role: input.role,
-        accountId,
+        accountId: aid,
       },
       select: {
         id: true,
@@ -86,8 +87,9 @@ export class UsersService {
     });
   }
 
-  async update(accountId: string, userId: string, input: UpdateUserInput) {
-    const user = await prisma.user.findFirst({ where: { id: userId, accountId } });
+  async update(accountId: string | null, userId: string, input: UpdateUserInput) {
+    const aid = requireAccountId(accountId);
+    const user = await prisma.user.findFirst({ where: { id: userId, accountId: aid } });
     if (!user) throw new AppError(404, 'User not found', 'NOT_FOUND');
 
     return prisma.user.update({
@@ -104,8 +106,9 @@ export class UsersService {
     });
   }
 
-  async deactivate(accountId: string, userId: string) {
-    const user = await prisma.user.findFirst({ where: { id: userId, accountId } });
+  async deactivate(accountId: string | null, userId: string) {
+    const aid = requireAccountId(accountId);
+    const user = await prisma.user.findFirst({ where: { id: userId, accountId: aid } });
     if (!user) throw new AppError(404, 'User not found', 'NOT_FOUND');
 
     if (user.role === 'account_owner') {

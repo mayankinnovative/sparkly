@@ -5,7 +5,6 @@ import { validate } from '../../middleware/validate';
 import { createJobSchema, updateJobSchema } from './jobs.schema';
 import { jobsService } from './jobs.service';
 import { successResponse, errorResponse } from '../../utils/response';
-import { AuthenticatedRequest } from '../../types';
 
 const router = Router();
 
@@ -13,9 +12,8 @@ router.use(authenticate, tenantScope);
 
 router.get('/', async (req, res) => {
   try {
-    const { accountId } = (req as AuthenticatedRequest).user!;
     const { status, customerId, assignedToId, from, to } = req.query as any;
-    const jobs = await jobsService.list(accountId, { status, customerId, assignedToId, from, to });
+    const jobs = await jobsService.list(req.user!.accountId, { status, customerId, assignedToId, from, to });
     res.json(successResponse(jobs));
   } catch (err: any) {
     const status = err.statusCode || 500;
@@ -25,8 +23,7 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const { accountId } = (req as AuthenticatedRequest).user!;
-    const job = await jobsService.getById(accountId, req.params.id);
+    const job = await jobsService.getById(req.user!.accountId, req.params.id);
     res.json(successResponse(job));
   } catch (err: any) {
     const status = err.statusCode || 500;
@@ -36,8 +33,7 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', validate(createJobSchema), async (req, res) => {
   try {
-    const { accountId } = (req as AuthenticatedRequest).user!;
-    const job = await jobsService.create(accountId, req.body);
+    const job = await jobsService.create(req.user!.accountId, req.body);
     res.status(201).json(successResponse(job));
   } catch (err: any) {
     const status = err.statusCode || 500;
@@ -47,8 +43,7 @@ router.post('/', validate(createJobSchema), async (req, res) => {
 
 router.put('/:id', validate(updateJobSchema), async (req, res) => {
   try {
-    const { accountId } = (req as AuthenticatedRequest).user!;
-    const job = await jobsService.update(accountId, req.params.id as string, req.body);
+    const job = await jobsService.update(req.user!.accountId, req.params.id as string, req.body);
     res.json(successResponse(job));
   } catch (err: any) {
     const status = err.statusCode || 500;
@@ -58,8 +53,7 @@ router.put('/:id', validate(updateJobSchema), async (req, res) => {
 
 router.patch('/:id/complete', async (req, res) => {
   try {
-    const { accountId } = (req as AuthenticatedRequest).user!;
-    const job = await jobsService.markCompleted(accountId, req.params.id);
+    const job = await jobsService.markCompleted(req.user!.accountId, req.params.id);
     res.json(successResponse(job));
   } catch (err: any) {
     const status = err.statusCode || 500;
@@ -69,8 +63,7 @@ router.patch('/:id/complete', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const { accountId } = (req as AuthenticatedRequest).user!;
-    await jobsService.delete(accountId, req.params.id);
+    await jobsService.delete(req.user!.accountId, req.params.id);
     res.json(successResponse(null, 'Job deleted'));
   } catch (err: any) {
     const status = err.statusCode || 500;

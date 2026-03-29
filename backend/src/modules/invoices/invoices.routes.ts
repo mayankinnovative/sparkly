@@ -6,7 +6,6 @@ import { validate } from '../../middleware/validate';
 import { createInvoiceSchema, updateInvoiceSchema } from './invoices.schema';
 import { invoicesService } from './invoices.service';
 import { successResponse, errorResponse } from '../../utils/response';
-import { AuthenticatedRequest } from '../../types';
 import Stripe from 'stripe';
 import { config } from '../../config';
 
@@ -40,9 +39,8 @@ router.use(authenticate, tenantScope);
 
 router.get('/', async (req, res) => {
   try {
-    const { accountId } = (req as AuthenticatedRequest).user!;
     const { status, customerId } = req.query as any;
-    const invoices = await invoicesService.list(accountId, { status, customerId });
+    const invoices = await invoicesService.list(req.user!.accountId, { status, customerId });
     res.json(successResponse(invoices));
   } catch (err: any) {
     const status = err.statusCode || 500;
@@ -52,8 +50,7 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const { accountId } = (req as AuthenticatedRequest).user!;
-    const invoice = await invoicesService.getById(accountId, req.params.id);
+    const invoice = await invoicesService.getById(req.user!.accountId, req.params.id);
     res.json(successResponse(invoice));
   } catch (err: any) {
     const status = err.statusCode || 500;
@@ -63,8 +60,7 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', validate(createInvoiceSchema), async (req, res) => {
   try {
-    const { accountId } = (req as AuthenticatedRequest).user!;
-    const invoice = await invoicesService.create(accountId, req.body);
+    const invoice = await invoicesService.create(req.user!.accountId, req.body);
     res.status(201).json(successResponse(invoice));
   } catch (err: any) {
     const status = err.statusCode || 500;
@@ -74,8 +70,7 @@ router.post('/', validate(createInvoiceSchema), async (req, res) => {
 
 router.put('/:id', validate(updateInvoiceSchema), async (req, res) => {
   try {
-    const { accountId } = (req as AuthenticatedRequest).user!;
-    const invoice = await invoicesService.update(accountId, req.params.id as string, req.body);
+    const invoice = await invoicesService.update(req.user!.accountId, req.params.id as string, req.body);
     res.json(successResponse(invoice));
   } catch (err: any) {
     const status = err.statusCode || 500;
@@ -85,8 +80,7 @@ router.put('/:id', validate(updateInvoiceSchema), async (req, res) => {
 
 router.post('/:id/payment-link', requireRole('account_owner'), async (req, res) => {
   try {
-    const { accountId } = (req as AuthenticatedRequest).user!;
-    const link = await invoicesService.createPaymentLink(accountId, req.params.id as string);
+    const link = await invoicesService.createPaymentLink(req.user!.accountId, req.params.id as string);
     res.status(201).json(successResponse(link));
   } catch (err: any) {
     const status = err.statusCode || 500;
