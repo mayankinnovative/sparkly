@@ -7,13 +7,17 @@ import type { Language } from '@/types';
 import { Calculator } from 'lucide-react';
 
 interface TaxSummary {
-  totalGst: number;
-  totalQst: number;
-  totalHst: number;
   totalSubtotal: number;
   totalTax: number;
+  totalAmount: number;
   invoiceCount: number;
 }
+
+// Canadian tax rates by province
+const TAX_RATES: Record<string, { gst: number; qst?: number; hst?: number }> = {
+  QC: { gst: 0.05, qst: 0.09975 },
+  ON: { gst: 0.05, hst: 0.13 },
+};
 
 export function TaxFilingPage() {
   const { language, province } = useAuthStore();
@@ -30,6 +34,11 @@ export function TaxFilingPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  const rates = TAX_RATES[province] || TAX_RATES.ON;
+  const estimatedGst = summary ? Math.round(summary.totalSubtotal * (rates.gst) * 100) / 100 : 0;
+  const estimatedQst = summary && rates.qst ? Math.round(summary.totalSubtotal * rates.qst * 100) / 100 : 0;
+  const estimatedHst = summary && rates.hst ? Math.round(summary.totalSubtotal * rates.hst * 100) / 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -76,14 +85,14 @@ export function TaxFilingPage() {
                         <p className="font-medium">{t('gst', lang)}</p>
                         <p className="text-sm text-gray-500">Federal goods and services tax</p>
                       </div>
-                      <p className="text-xl font-bold">${summary.totalGst.toLocaleString()}</p>
+                      <p className="text-xl font-bold">${estimatedGst.toLocaleString()}</p>
                     </div>
                     <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium">{t('qst', lang)}</p>
                         <p className="text-sm text-gray-500">Quebec sales tax</p>
                       </div>
-                      <p className="text-xl font-bold">${summary.totalQst.toLocaleString()}</p>
+                      <p className="text-xl font-bold">${estimatedQst.toLocaleString()}</p>
                     </div>
                   </>
                 ) : (
@@ -92,7 +101,7 @@ export function TaxFilingPage() {
                       <p className="font-medium">{t('hst', lang)}</p>
                       <p className="text-sm text-gray-500">Harmonized sales tax</p>
                     </div>
-                    <p className="text-xl font-bold">${summary.totalHst.toLocaleString()}</p>
+                    <p className="text-xl font-bold">${estimatedHst.toLocaleString()}</p>
                   </div>
                 )}
                 <div className="border-t pt-4 flex justify-between items-center font-bold text-lg">
