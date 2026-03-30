@@ -15,9 +15,10 @@ export function LogJobPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [form, setForm] = useState({
     customerId: '',
+    title: '',
     description: '',
     scheduledDate: new Date().toISOString().slice(0, 16),
-    amount: '',
+    price: '',
     notes: '',
   });
   const [loading, setLoading] = useState(false);
@@ -34,11 +35,11 @@ export function LogJobPage() {
     try {
       await api.post('/jobs', {
         ...form,
-        amount: parseFloat(form.amount),
+        price: parseFloat(form.price),
         scheduledDate: new Date(form.scheduledDate).toISOString(),
       });
       setSuccess(true);
-      setForm({ customerId: '', description: '', scheduledDate: new Date().toISOString().slice(0, 16), amount: '', notes: '' });
+      setForm({ customerId: '', title: '', description: '', scheduledDate: new Date().toISOString().slice(0, 16), price: '', notes: '' });
     } catch (err) {
       console.error(err);
     } finally {
@@ -72,12 +73,21 @@ export function LogJobPage() {
               </select>
             </div>
             <div className="space-y-2">
-              <Label>{t('jobDescription', lang)}</Label>
+              <Label>Title *</Label>
               <Input
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
                 placeholder="e.g. Deep clean - 3 bedroom house"
                 required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t('jobDescription', lang)}</Label>
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[60px]"
+                placeholder="Optional details..."
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -96,8 +106,8 @@ export function LogJobPage() {
                   type="number"
                   step="0.01"
                   min="0"
-                  value={form.amount}
-                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                  value={form.price}
+                  onChange={(e) => setForm({ ...form, price: e.target.value })}
                   placeholder="150.00"
                   required
                 />

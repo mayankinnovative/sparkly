@@ -10,20 +10,18 @@ import type { Language } from '@/types';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
 const CATEGORIES = [
-  'cleaning_supplies', 'equipment', 'vehicle', 'insurance',
-  'marketing', 'office', 'wages', 'subcontractor', 'other',
+  'supplies', 'equipment', 'fuel', 'wages', 'insurance',
+  'marketing', 'storage', 'training', 'software', 'other',
 ];
 
 export function LogExpensePage() {
   const { language } = useAuthStore();
   const lang = language as Language;
   const [form, setForm] = useState({
-    category: 'cleaning_supplies',
+    category: 'supplies',
     description: '',
     amount: '',
     date: new Date().toISOString().slice(0, 16),
-    vendor: '',
-    notes: '',
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -39,7 +37,7 @@ export function LogExpensePage() {
         date: new Date(form.date).toISOString(),
       });
       setSuccess(true);
-      setForm({ category: 'cleaning_supplies', description: '', amount: '', date: new Date().toISOString().slice(0, 16), vendor: '', notes: '' });
+      setForm({ category: 'supplies', description: '', amount: '', date: new Date().toISOString().slice(0, 16) });
     } catch (err) {
       console.error(err);
     } finally {
@@ -83,10 +81,6 @@ export function LogExpensePage() {
                 <Label>Date</Label>
                 <Input type="datetime-local" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Vendor</Label>
-              <Input value={form.vendor} onChange={(e) => setForm({ ...form, vendor: e.target.value })} placeholder="Optional" />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
