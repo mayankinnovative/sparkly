@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const createUserSchema = z.object({
   email: z.string().email(),
+  username: z.string().min(3).max(50).regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
   password: z.string().min(8),
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),

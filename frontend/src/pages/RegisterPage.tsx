@@ -13,6 +13,7 @@ export function RegisterPage() {
   const { setTokens, setUser, setAccount } = useAuthStore();
   const [form, setForm] = useState({
     fullName: '',
+    username: '',
     email: '',
     password: '',
     businessName: '',
@@ -30,7 +31,18 @@ export function RegisterPage() {
     setLoading(true);
 
     try {
-      const { data } = await api.post('/auth/register', form);
+      const parts = form.fullName.trim().split(/\s+/);
+      const firstName = parts[0] || '';
+      const lastName = parts.slice(1).join(' ') || parts[0] || '';
+      const { data } = await api.post('/auth/register', {
+        email: form.email,
+        username: form.username,
+        password: form.password,
+        firstName,
+        lastName,
+        accountName: form.businessName,
+        province: form.province,
+      });
       const { accessToken, refreshToken, user, account } = data.data;
       setTokens(accessToken, refreshToken);
       setUser(user);
@@ -69,6 +81,18 @@ export function RegisterPage() {
                 value={form.fullName}
                 onChange={(e) => update('fullName', e.target.value)}
                 required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                placeholder="johndoe"
+                value={form.username}
+                onChange={(e) => update('username', e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                required
+                minLength={3}
+                maxLength={50}
               />
             </div>
             <div className="space-y-2">

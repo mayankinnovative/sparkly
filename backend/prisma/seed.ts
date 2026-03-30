@@ -17,6 +17,7 @@ async function main() {
     update: {},
     create: {
       email: process.env.SUPER_ADMIN_EMAIL || 'admin@sparkly.ca',
+      username: 'admin_sparkly',
       passwordHash: superAdminPassword,
       firstName: 'Super',
       lastName: 'Admin',
@@ -141,6 +142,7 @@ async function main() {
     update: {},
     create: {
       email: 'owner@sparklyclean.ca',
+      username: 'marie_tremblay',
       passwordHash: ownerPassword,
       firstName: 'Marie',
       lastName: 'Tremblay',
@@ -167,6 +169,7 @@ async function main() {
     update: {},
     create: {
       email: 'sophie@sparklyclean.ca',
+      username: 'sophie_tremblay',
       passwordHash: await bcrypt.hash('Staff@123456', 10),
       firstName: 'Sophie',
       lastName: 'Tremblay',
@@ -180,6 +183,7 @@ async function main() {
     update: {},
     create: {
       email: 'marc@sparklyclean.ca',
+      username: 'marc_gagnon',
       passwordHash: await bcrypt.hash('Staff@123456', 10),
       firstName: 'Marc',
       lastName: 'Gagnon',
@@ -205,6 +209,7 @@ async function main() {
     update: {},
     create: {
       email: 'owner@cleantracktoronto.ca',
+      username: 'james_wilson',
       passwordHash: ownerPassword,
       firstName: 'James',
       lastName: 'Wilson',
@@ -230,6 +235,7 @@ async function main() {
     update: {},
     create: {
       email: 'emily@cleantracktoronto.ca',
+      username: 'emily_carter',
       passwordHash: await bcrypt.hash('Staff@123456', 10),
       firstName: 'Emily',
       lastName: 'Carter',
@@ -243,6 +249,7 @@ async function main() {
     update: {},
     create: {
       email: 'noah@cleantracktoronto.ca',
+      username: 'noah_wilson',
       passwordHash: await bcrypt.hash('Staff@123456', 10),
       firstName: 'Noah',
       lastName: 'Wilson',

@@ -10,6 +10,7 @@ export class UsersService {
       select: {
         id: true,
         email: true,
+        username: true,
         firstName: true,
         lastName: true,
         role: true,
@@ -26,6 +27,7 @@ export class UsersService {
       select: {
         id: true,
         email: true,
+        username: true,
         firstName: true,
         lastName: true,
         role: true,
@@ -64,11 +66,15 @@ export class UsersService {
     const existing = await prisma.user.findUnique({ where: { email: input.email } });
     if (existing) throw new AppError(409, 'Email already in use', 'EMAIL_EXISTS');
 
+    const existingUsername = await prisma.user.findUnique({ where: { username: input.username } });
+    if (existingUsername) throw new AppError(409, 'Username already taken', 'USERNAME_EXISTS');
+
     const passwordHash = await bcrypt.hash(input.password, 10);
 
     return prisma.user.create({
       data: {
         email: input.email,
+        username: input.username,
         passwordHash,
         firstName: input.firstName,
         lastName: input.lastName,
@@ -78,6 +84,7 @@ export class UsersService {
       select: {
         id: true,
         email: true,
+        username: true,
         firstName: true,
         lastName: true,
         role: true,
@@ -98,6 +105,7 @@ export class UsersService {
       select: {
         id: true,
         email: true,
+        username: true,
         firstName: true,
         lastName: true,
         role: true,
@@ -117,6 +125,7 @@ export class UsersService {
       select: {
         id: true,
         email: true,
+        username: true,
         firstName: true,
         lastName: true,
         role: true,

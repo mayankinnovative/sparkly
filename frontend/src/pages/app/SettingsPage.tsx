@@ -60,6 +60,10 @@ export function SettingsPage() {
               <Input value={email} disabled className="bg-gray-50" />
             </div>
             <div>
+              <Label>Username</Label>
+              <Input value={user?.username ?? ''} disabled className="bg-gray-50" />
+            </div>
+            <div>
               <Label>Role</Label>
               <Input value={user?.role ?? ''} disabled className="bg-gray-50 capitalize" />
             </div>

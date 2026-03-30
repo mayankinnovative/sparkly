@@ -9,12 +9,18 @@ import { RegisterInput, LoginInput } from './auth.schema';
 
 export class AuthService {
   async register(input: RegisterInput) {
-    const existingUser = await prisma.user.findUnique({
+    const existingEmail = await prisma.user.findUnique({
       where: { email: input.email },
     });
-
-    if (existingUser) {
+    if (existingEmail) {
       throw new AppError(409, 'Email already registered', 'EMAIL_EXISTS');
+    }
+
+    const existingUsername = await prisma.user.findUnique({
+      where: { username: input.username },
+    });
+    if (existingUsername) {
+      throw new AppError(409, 'Username already taken', 'USERNAME_EXISTS');
     }
 
     const passwordHash = await bcrypt.hash(input.password, 10);
@@ -31,6 +37,7 @@ export class AuthService {
       const user = await tx.user.create({
         data: {
           email: input.email,
+          username: input.username,
           passwordHash,
           firstName: input.firstName,
           lastName: input.lastName,
@@ -62,6 +69,7 @@ export class AuthService {
       user: {
         id: result.user.id,
         email: result.user.email,
+        username: result.user.username,
         fullName: `${result.user.firstName} ${result.user.lastName}`.trim(),
         role: result.user.role,
       },
@@ -76,10 +84,10 @@ export class AuthService {
   }
 
   async login(input: LoginInput) {
-    const user = await prisma.user.findUnique({
-      where: { email: input.email },
-      include: { account: true },
-    });
+    const isEmail = input.identifier.includes('@');
+    const user = isEmail
+      ? await prisma.user.findUnique({ where: { email: input.identifier }, include: { account: true } })
+      : await prisma.user.findUnique({ where: { username: input.identifier }, include: { account: true } });
 
     if (!user) {
       throw new AppError(401, 'Invalid credentials', 'INVALID_CREDENTIALS');
@@ -108,6 +116,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+        username: user.username,
         fullName: `${user.firstName} ${user.lastName}`.trim(),
         role: user.role,
       },
@@ -152,6 +161,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+        username: user.username,
         fullName: `${user.firstName} ${user.lastName}`.trim(),
         role: user.role,
       },

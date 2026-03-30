@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 export const registerSchema = z.object({
   email: z.string().email('Valid email required'),
+  username: z.string().min(3, 'Username must be at least 3 characters').max(50).regex(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   firstName: z.string().min(1, 'First name required').max(100),
   lastName: z.string().min(1, 'Last name required').max(100),
@@ -10,7 +11,7 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  email: z.string().email('Valid email required'),
+  identifier: z.string().min(1, 'Email or username required'),
   password: z.string().min(1, 'Password required'),
 });
 
