@@ -52,11 +52,12 @@ export interface Job {
 export interface RecurringJob {
   id: string;
   customerId: string;
-  description: string;
+  title: string;
+  description?: string | null;
   frequency: 'daily' | 'weekly' | 'monthly';
-  amount: number;
-  nextRunDate: string;
-  status: 'active' | 'paused' | 'cancelled';
+  price: number;
+  nextRun: string;
+  status: 'draft' | 'active' | 'paused';
   customer?: { id: string; name: string };
 }
 

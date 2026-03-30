@@ -73,8 +73,8 @@ export function RecurringJobsPage() {
                   <td className="px-4 py-3">
                     <Badge variant={freqColor[rj.frequency] || 'secondary'} className="capitalize">{rj.frequency}</Badge>
                   </td>
-                  <td className="px-4 py-3 text-sm font-medium">${rj.amount}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{format(new Date(rj.nextRunDate), 'MMM d, yyyy')}</td>
+                  <td className="px-4 py-3 text-sm font-medium">${Number(rj.price).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-sm text-gray-500">{format(new Date(rj.nextRun), 'MMM d, yyyy')}</td>
                   <td className="px-4 py-3">
                     <Badge variant={statusColor[rj.status] || 'secondary'} className="capitalize">{rj.status}</Badge>
                   </td>
