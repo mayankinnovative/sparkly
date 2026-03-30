@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import { CheckCircle2, Clock, XCircle, Play } from 'lucide-react';
 
 const statusConfig: Record<string, { variant: 'info' | 'warning' | 'success' | 'destructive'; icon: React.ElementType }> = {
+  pending: { variant: 'info', icon: Clock },
   scheduled: { variant: 'info', icon: Clock },
   in_progress: { variant: 'warning', icon: Play },
   completed: { variant: 'success', icon: CheckCircle2 },
@@ -42,7 +43,8 @@ export function AllJobsPage() {
   const filtered = jobs.filter(
     (j) =>
       !filter ||
-      j.description.toLowerCase().includes(filter.toLowerCase()) ||
+      (j.title || '').toLowerCase().includes(filter.toLowerCase()) ||
+      (j.description || '').toLowerCase().includes(filter.toLowerCase()) ||
       j.customer?.name.toLowerCase().includes(filter.toLowerCase()),
   );
 
@@ -87,15 +89,15 @@ export function AllJobsPage() {
                 return (
                   <tr key={job.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm font-medium">{job.customer?.name}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{job.description}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{job.description || job.title}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">
                       {format(new Date(job.scheduledDate), 'MMM d, yyyy')}
                     </td>
-                    <td className="px-4 py-3 text-sm font-medium">${job.amount}</td>
+                    <td className="px-4 py-3 text-sm font-medium">${Number(job.price).toFixed(2)}</td>
                     <td className="px-4 py-3">
                       <Badge variant={cfg.variant} className="gap-1">
                         <Icon className="h-3 w-3" />
-                        {t(job.status === 'in_progress' ? 'inProgress' : job.status as any, lang)}
+                        {t(job.status === 'in_progress' ? 'inProgress' : job.status === 'pending' ? 'pending' : job.status as any, lang)}
                       </Badge>
                     </td>
                     <td className="px-4 py-3">

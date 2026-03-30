@@ -2,7 +2,7 @@ export type Plan = 'solo' | 'pro' | 'business';
 export type UserRole = 'super_admin' | 'account_owner' | 'staff' | 'accountant';
 export type Province = 'QC' | 'ON';
 export type Language = 'en' | 'fr';
-export type JobStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+export type JobStatus = 'pending' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
 
 export interface User {
@@ -39,15 +39,16 @@ export interface Customer {
 export interface Job {
   id: string;
   customerId: string;
-  assignedToId?: string | null;
-  description: string;
+  title: string;
+  description?: string | null;
+  assignedTo?: string | null;
   scheduledDate: string;
-  completedDate?: string | null;
-  amount: number;
+  completedAt?: string | null;
+  price: number;
   status: JobStatus;
   notes?: string | null;
   customer?: { id: string; name: string };
-  assignedTo?: { id: string; fullName: string } | null;
+  assignee?: { id: string; firstName: string; lastName: string } | null;
 }
 
 export interface RecurringJob {
