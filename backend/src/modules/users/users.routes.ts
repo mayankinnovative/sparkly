@@ -4,7 +4,7 @@ import { requireRole } from '../../middleware/rbac';
 import { tenantScope } from '../../middleware/tenantScope';
 import { validate } from '../../middleware/validate';
 import { usersService } from './users.service';
-import { createUserSchema, updateUserSchema } from './users.schema';
+import { createUserSchema, updateUserSchema, updateMeSchema } from './users.schema';
 import { successResponse } from '../../utils/response';
 
 const router = Router();
@@ -18,6 +18,17 @@ router.get(
     try {
       const users = await usersService.list(req.user!.accountId);
       res.json(successResponse(users));
+    } catch (error) { next(error); }
+  }
+);
+
+router.patch(
+  '/me',
+  validate(updateMeSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = await usersService.updateMe(req.user!.userId, req.body);
+      res.json(successResponse(user, 'Profile updated'));
     } catch (error) { next(error); }
   }
 );

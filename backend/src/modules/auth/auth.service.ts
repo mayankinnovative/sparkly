@@ -62,13 +62,12 @@ export class AuthService {
       user: {
         id: result.user.id,
         email: result.user.email,
-        firstName: result.user.firstName,
-        lastName: result.user.lastName,
+        fullName: `${result.user.firstName} ${result.user.lastName}`.trim(),
         role: result.user.role,
       },
       account: {
         id: result.account.id,
-        name: result.account.name,
+        businessName: result.account.name,
         province: result.account.province,
         plan: result.account.plan,
       },
@@ -109,14 +108,13 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        fullName: `${user.firstName} ${user.lastName}`.trim(),
         role: user.role,
       },
       account: user.account
         ? {
             id: user.account.id,
-            name: user.account.name,
+            businessName: user.account.name,
             province: user.account.province,
             plan: user.account.plan,
           }
@@ -154,14 +152,13 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        fullName: `${user.firstName} ${user.lastName}`.trim(),
         role: user.role,
       },
       account: user.account
         ? {
             id: user.account.id,
-            name: user.account.name,
+            businessName: user.account.name,
             province: user.account.province,
             plan: user.account.plan,
           }

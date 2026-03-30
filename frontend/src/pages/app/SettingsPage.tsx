@@ -10,7 +10,7 @@ import api from '@/lib/api';
 import { Building2, User, Globe, Save } from 'lucide-react';
 
 export function SettingsPage() {
-  const { language, user, account, province, setProvince } = useAuthStore();
+  const { language, user, account, province, setProvince, setUser } = useAuthStore();
   const lang = language as Language;
 
   const [fullName, setFullName] = useState(user?.fullName ?? '');
@@ -24,7 +24,8 @@ export function SettingsPage() {
     setSaving(true);
     setMessage('');
     try {
-      await api.patch('/users/me', { fullName });
+      const { data } = await api.patch('/users/me', { fullName });
+      if (user) setUser({ ...user, fullName });
       setMessage(lang === 'en' ? 'Profile updated successfully' : 'Profil mis à jour');
     } catch {
       setMessage(lang === 'en' ? 'Failed to update profile' : 'Échec de la mise à jour');

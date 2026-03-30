@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import prisma from '../../config/database';
 import { AppError, tenantFilter, requireAccountId } from '../../utils/response';
-import { CreateUserInput, UpdateUserInput } from './users.schema';
+import { CreateUserInput, UpdateUserInput, UpdateMeInput } from './users.schema';
 
 export class UsersService {
   async list(accountId: string | null) {
@@ -104,6 +104,30 @@ export class UsersService {
         isActive: true,
       },
     });
+  }
+
+  async updateMe(userId: string, input: UpdateMeInput) {
+    const parts = input.fullName.trim().split(/\s+/);
+    const firstName = parts[0];
+    const lastName = parts.length > 1 ? parts.slice(1).join(' ') : '';
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { firstName, lastName },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        isActive: true,
+      },
+    });
+
+    return {
+      ...user,
+      fullName: `${user.firstName} ${user.lastName}`.trim(),
+    };
   }
 
   async deactivate(accountId: string | null, userId: string) {
