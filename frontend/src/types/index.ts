@@ -23,6 +23,8 @@ export interface Account {
   isActive: boolean;
 }
 
+export type CustomerType = 'QC' | 'ON';
+
 export interface Customer {
   id: string;
   name: string;
@@ -32,6 +34,7 @@ export interface Customer {
   city?: string | null;
   province?: string | null;
   postalCode?: string | null;
+  customerType: CustomerType;
   notes?: string | null;
   isActive: boolean;
 }

@@ -70,6 +70,11 @@ enum PaymentLinkStatus {
   failed
 }
 
+enum CustomerType {
+  QC
+  ON
+}
+
 enum ExpenseCategory {
   supplies
   equipment
@@ -131,19 +136,20 @@ model User {
 }
 
 model Customer {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  accountId  String   @map("account_id") @db.Uuid
-  name       String   @db.VarChar(255)
-  email      String?  @db.VarChar(255)
-  phone      String?  @db.VarChar(50)
-  address    String?  @db.VarChar(500)
-  city       String?  @db.VarChar(100)
-  province   String?  @db.VarChar(50)
-  postalCode String?  @map("postal_code") @db.VarChar(20)
-  notes      String?  @db.Text
-  isActive   Boolean  @default(true) @map("is_active")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId    String       @map("account_id") @db.Uuid
+  name         String       @db.VarChar(255)
+  email        String?      @db.VarChar(255)
+  phone        String?      @db.VarChar(50)
+  address      String?      @db.VarChar(500)
+  city         String?      @db.VarChar(100)
+  province     String?      @db.VarChar(50)
+  postalCode   String?      @map("postal_code") @db.VarChar(20)
+  customerType CustomerType @default(QC) @map("customer_type")
+  notes        String?      @db.Text
+  isActive     Boolean      @default(true) @map("is_active")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
 
   account       Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
   jobs          Job[]

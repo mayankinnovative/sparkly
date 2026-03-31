@@ -2,28 +2,80 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuthStore, hasPlanAccess } from '@/store/auth';
 import { t } from '@/lib/i18n';
 import api from '@/lib/api';
-import type { RecurringJob, Language } from '@/types';
+import type { RecurringJob, Customer, Language } from '@/types';
 import { format } from 'date-fns';
-import { CalendarClock, Lock } from 'lucide-react';
+import { CalendarClock, Lock, Plus, X, Loader2 } from 'lucide-react';
+
+const emptyForm = {
+  customerId: '',
+  title: '',
+  description: '',
+  frequency: 'weekly' as 'daily' | 'weekly' | 'monthly',
+  price: '',
+  nextRun: new Date().toISOString().slice(0, 16),
+};
 
 export function RecurringJobsPage() {
   const { language, account } = useAuthStore();
   const lang = language as Language;
   const [jobs, setJobs] = useState<RecurringJob[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState(emptyForm);
 
   const hasAccess = hasPlanAccess(account?.plan, 'pro');
 
-  useEffect(() => {
-    if (!hasAccess) { setLoading(false); return; }
+  const fetchJobs = () => {
     api.get('/recurring-jobs')
       .then(({ data }) => setJobs(data.data))
       .catch(console.error)
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    if (!hasAccess) { setLoading(false); return; }
+    fetchJobs();
+    api.get('/customers').then(({ data }) => setCustomers(data.data)).catch(console.error);
   }, [hasAccess]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await api.post('/recurring-jobs', {
+        ...form,
+        price: parseFloat(form.price),
+        nextRun: new Date(form.nextRun).toISOString(),
+      });
+      setShowForm(false);
+      setForm(emptyForm);
+      fetchJobs();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePauseResume = async (rj: RecurringJob) => {
+    try {
+      if (rj.status === 'active') {
+        await api.patch(`/recurring-jobs/${rj.id}/cancel`);
+      } else {
+        await api.patch(`/recurring-jobs/${rj.id}`, { status: 'active' });
+      }
+      fetchJobs();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   if (!hasAccess) {
     return (
@@ -37,11 +89,98 @@ export function RecurringJobsPage() {
   }
 
   const freqColor = { daily: 'info', weekly: 'warning', monthly: 'secondary' } as const;
-  const statusColor = { active: 'success', paused: 'warning', cancelled: 'destructive' } as const;
+  const statusColor = { active: 'success', paused: 'warning', cancelled: 'destructive', draft: 'secondary' } as const;
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">{t('recurringJobs', lang)}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">{t('recurringJobs', lang)}</h1>
+        <Button onClick={() => setShowForm(!showForm)}>
+          {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          {showForm ? t('cancel', lang) : t('create', lang)}
+        </Button>
+      </div>
+
+      {showForm && (
+        <Card>
+          <CardContent className="p-6">
+            <h2 className="text-lg font-semibold mb-4">{t('create', lang)} Recurring Job</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{t('customer', lang)} *</Label>
+                  <select
+                    value={form.customerId}
+                    onChange={(e) => setForm({ ...form, customerId: e.target.value })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    required
+                  >
+                    <option value="">Select customer...</option>
+                    {customers.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Title *</Label>
+                  <Input
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    placeholder="e.g. Weekly office cleaning"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Frequency *</Label>
+                  <select
+                    value={form.frequency}
+                    onChange={(e) => setForm({ ...form, frequency: e.target.value as any })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    required
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('amount', lang)} ($) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.price}
+                    onChange={(e) => setForm({ ...form, price: e.target.value })}
+                    placeholder="150.00"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>First Run Date *</Label>
+                  <Input
+                    type="datetime-local"
+                    value={form.nextRun}
+                    onChange={(e) => setForm({ ...form, nextRun: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t('jobDescription', lang)}</Label>
+                  <Input
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    placeholder="Optional details..."
+                  />
+                </div>
+              </div>
+              <Button type="submit" disabled={saving}>
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                {t('create', lang)}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       {loading ? (
         <p className="text-center text-gray-500 py-12">{t('loading', lang)}</p>
@@ -63,13 +202,14 @@ export function RecurringJobsPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('amount', lang)}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Next Run</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('status', lang)}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {jobs.map((rj) => (
                 <tr key={rj.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm font-medium">{rj.customer?.name}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{rj.description}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{rj.description || rj.title}</td>
                   <td className="px-4 py-3">
                     <Badge variant={freqColor[rj.frequency] || 'secondary'} className="capitalize">{rj.frequency}</Badge>
                   </td>
@@ -77,6 +217,15 @@ export function RecurringJobsPage() {
                   <td className="px-4 py-3 text-sm text-gray-500">{format(new Date(rj.nextRun), 'MMM d, yyyy')}</td>
                   <td className="px-4 py-3">
                     <Badge variant={statusColor[rj.status] || 'secondary'} className="capitalize">{rj.status}</Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Button
+                      size="sm"
+                      variant={rj.status === 'active' ? 'destructive' : 'outline'}
+                      onClick={() => handlePauseResume(rj)}
+                    >
+                      {rj.status === 'active' ? 'Pause' : 'Resume'}
+                    </Button>
                   </td>
                 </tr>
               ))}

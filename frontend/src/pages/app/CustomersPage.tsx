@@ -7,8 +7,10 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/store/auth';
 import { t } from '@/lib/i18n';
 import api from '@/lib/api';
-import type { Customer, Language } from '@/types';
-import { Plus, Users, X, Loader2 } from 'lucide-react';
+import type { Customer, CustomerType, Language } from '@/types';
+import { Plus, Users, X, Loader2, Pencil, Trash2 } from 'lucide-react';
+
+const emptyForm = { name: '', email: '', phone: '', address: '', city: '', province: '', postalCode: '', customerType: 'QC' as CustomerType };
 
 export function CustomersPage() {
   const { language } = useAuthStore();
@@ -18,7 +20,8 @@ export function CustomersPage() {
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState('');
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', address: '', city: '', province: '', postalCode: '' });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
 
   const fetchCustomers = () => {
     api.get('/customers')
@@ -29,18 +32,52 @@ export function CustomersPage() {
 
   useEffect(() => { fetchCustomers(); }, []);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const resetForm = () => {
+    setForm(emptyForm);
+    setShowForm(false);
+    setEditingId(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.post('/customers', form);
-      setShowForm(false);
-      setForm({ name: '', email: '', phone: '', address: '', city: '', province: '', postalCode: '' });
+      if (editingId) {
+        await api.patch(`/customers/${editingId}`, form);
+      } else {
+        await api.post('/customers', form);
+      }
+      resetForm();
       fetchCustomers();
     } catch (err) {
       console.error(err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleEdit = (c: Customer) => {
+    setEditingId(c.id);
+    setForm({
+      name: c.name,
+      email: c.email || '',
+      phone: c.phone || '',
+      address: c.address || '',
+      city: c.city || '',
+      province: c.province || '',
+      postalCode: c.postalCode || '',
+      customerType: c.customerType || 'QC',
+    });
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm(t('confirmDelete', lang))) return;
+    try {
+      await api.delete(`/customers/${id}`);
+      fetchCustomers();
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -59,7 +96,7 @@ export function CustomersPage() {
             onChange={(e) => setFilter(e.target.value)}
             className="w-64"
           />
-          <Button onClick={() => setShowForm(!showForm)}>
+          <Button onClick={() => { if (showForm) resetForm(); else setShowForm(true); }}>
             {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
             {showForm ? t('cancel', lang) : t('create', lang)}
           </Button>
@@ -69,11 +106,24 @@ export function CustomersPage() {
       {showForm && (
         <Card>
           <CardContent className="p-6">
-            <form onSubmit={handleCreate} className="space-y-4">
+            <h2 className="text-lg font-semibold mb-4">{editingId ? t('edit', lang) : t('create', lang)} {t('customer', lang)}</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Name *</Label>
                   <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Account Type *</Label>
+                  <select
+                    value={form.customerType}
+                    onChange={(e) => setForm({ ...form, customerType: e.target.value as CustomerType })}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    required
+                  >
+                    <option value="QC">QC — Quick Clean</option>
+                    <option value="ON">ON — Ongoing</option>
+                  </select>
                 </div>
                 <div className="space-y-2">
                   <Label>Email</Label>
@@ -92,14 +142,23 @@ export function CustomersPage() {
                   <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
                 </div>
                 <div className="space-y-2">
+                  <Label>Province</Label>
+                  <Input value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} />
+                </div>
+                <div className="space-y-2">
                   <Label>Postal Code</Label>
                   <Input value={form.postalCode} onChange={(e) => setForm({ ...form, postalCode: e.target.value })} />
                 </div>
               </div>
-              <Button type="submit" disabled={saving}>
-                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                {t('save', lang)}
-              </Button>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={saving}>
+                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {editingId ? t('save', lang) : t('create', lang)}
+                </Button>
+                {editingId && (
+                  <Button type="button" variant="outline" onClick={resetForm}>{t('cancel', lang)}</Button>
+                )}
+              </div>
             </form>
           </CardContent>
         </Card>
@@ -121,9 +180,14 @@ export function CustomersPage() {
               <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-semibold text-gray-900">{c.name}</h3>
-                  <Badge variant={c.isActive ? 'success' : 'destructive'}>
-                    {c.isActive ? 'Active' : 'Inactive'}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={c.customerType === 'ON' ? 'info' : 'secondary'}>
+                      {c.customerType === 'ON' ? 'Ongoing' : 'Quick Clean'}
+                    </Badge>
+                    <Badge variant={c.isActive ? 'success' : 'destructive'}>
+                      {c.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
                 </div>
                 {c.email && <p className="text-sm text-gray-500">{c.email}</p>}
                 {c.phone && <p className="text-sm text-gray-500">{c.phone}</p>}
@@ -132,6 +196,14 @@ export function CustomersPage() {
                     {c.address}{c.city ? `, ${c.city}` : ''}{c.postalCode ? ` ${c.postalCode}` : ''}
                   </p>
                 )}
+                <div className="flex gap-2 mt-3 pt-3 border-t">
+                  <Button size="sm" variant="outline" onClick={() => handleEdit(c)}>
+                    <Pencil className="h-3 w-3 mr-1" /> {t('edit', lang)}
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => handleDelete(c.id)}>
+                    <Trash2 className="h-3 w-3 mr-1" /> {t('delete', lang)}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

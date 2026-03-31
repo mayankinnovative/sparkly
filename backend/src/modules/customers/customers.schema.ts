@@ -8,6 +8,7 @@ export const createCustomerSchema = z.object({
   city: z.string().max(100).optional().nullable(),
   province: z.string().max(50).optional().nullable(),
   postalCode: z.string().max(20).optional().nullable(),
+  customerType: z.enum(['QC', 'ON']).default('QC'),
   notes: z.string().optional().nullable(),
 });
 
