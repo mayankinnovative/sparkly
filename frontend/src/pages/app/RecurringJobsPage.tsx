@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useAuthStore, hasPlanAccess } from '@/store/auth';
 import { t } from '@/lib/i18n';
 import api from '@/lib/api';
@@ -31,6 +32,7 @@ export function RecurringJobsPage() {
   const [form, setForm] = useState(emptyForm);
   const [editingJob, setEditingJob] = useState<RecurringJob | null>(null);
   const [editForm, setEditForm] = useState(emptyForm);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const hasAccess = hasPlanAccess(account?.plan, 'pro');
 
@@ -97,13 +99,15 @@ export function RecurringJobsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm(t('confirmDelete', lang))) return;
+  const handleDelete = async () => {
+    if (!deleteId) return;
     try {
-      await api.delete(`/recurring-jobs/${id}`);
-      setJobs((prev) => prev.filter((j) => j.id !== id));
+      await api.delete(`/recurring-jobs/${deleteId}`);
+      setJobs((prev) => prev.filter((j) => j.id !== deleteId));
     } catch (err) {
       console.error(err);
+    } finally {
+      setDeleteId(null);
     }
   };
 
@@ -355,7 +359,7 @@ export function RecurringJobsPage() {
                       <Button size="sm" variant="ghost" onClick={() => handleEdit(rj)}>
                         <Pencil className="h-3 w-3" />
                       </Button>
-                      <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700" onClick={() => handleDelete(rj.id)}>
+                      <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700" onClick={() => setDeleteId(rj.id)}>
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
@@ -366,6 +370,16 @@ export function RecurringJobsPage() {
           </table>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteId}
+        title={t('confirmDeleteTitle', lang)}
+        message={t('confirmDelete', lang)}
+        confirmLabel={t('delete', lang)}
+        cancelLabel={t('cancel', lang)}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   );
 }
