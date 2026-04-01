@@ -77,7 +77,7 @@ export function AllJobsPage() {
     if (!editingJob) return;
     setSaving(true);
     try {
-      await api.patch(`/jobs/${editingJob.id}`, {
+      await api.put(`/jobs/${editingJob.id}`, {
         ...editForm,
         price: parseFloat(editForm.price),
         scheduledDate: new Date(editForm.scheduledDate).toISOString(),

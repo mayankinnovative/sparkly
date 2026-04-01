@@ -17,11 +17,11 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'dashboard', path: '/app', icon: LayoutDashboard },
+  { label: 'customers', path: '/app/customers', icon: Users },
   { label: 'logJob', path: '/app/log-job', icon: ClipboardList },
   { label: 'allJobs', path: '/app/jobs', icon: CalendarClock },
   { label: 'recurringJobs', path: '/app/recurring-jobs', icon: CalendarClock, requiredPlan: 'pro' },
   { label: 'logExpense', path: '/app/log-expense', icon: Receipt },
-  { label: 'customers', path: '/app/customers', icon: Users },
   { label: 'invoices', path: '/app/invoices', icon: FileText },
   { label: 'paymentLinks', path: '/app/payment-links', icon: Link2 },
   { label: 'payroll', path: '/app/payroll', icon: DollarSign, requiredPlan: 'business' },

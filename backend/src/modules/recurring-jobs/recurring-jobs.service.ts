@@ -89,6 +89,14 @@ export class RecurringJobsService {
     });
   }
 
+  async delete(accountId: string | null, id: string) {
+    const aid = requireAccountId(accountId);
+    const rj = await prisma.recurringJob.findFirst({ where: { id, accountId: aid } });
+    if (!rj) throw new AppError(404, 'Recurring job not found', 'NOT_FOUND');
+
+    await prisma.recurringJob.delete({ where: { id } });
+  }
+
   /** Called by the cron scheduler every 5 minutes */
   async processRecurringJobs() {
     const now = new Date();

@@ -63,4 +63,14 @@ router.patch('/:id/cancel', requireRole('account_owner'), async (req, res) => {
   }
 });
 
+router.delete('/:id', async (req, res) => {
+  try {
+    await recurringJobsService.delete(req.user!.accountId, req.params.id);
+    res.json(successResponse(null, 'Recurring job deleted'));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
 export default router;
