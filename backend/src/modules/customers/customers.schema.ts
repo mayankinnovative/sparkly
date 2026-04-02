@@ -1,15 +1,17 @@
 import { z } from 'zod';
 
+const emptyToNull = z.string().transform((v) => (v === '' ? null : v));
+
 export const createCustomerSchema = z.object({
   name: z.string().min(1).max(255),
-  email: z.string().email().optional().nullable(),
-  phone: z.string().max(50).optional().nullable(),
-  address: z.string().max(500).optional().nullable(),
-  city: z.string().max(100).optional().nullable(),
-  province: z.string().max(50).optional().nullable(),
-  postalCode: z.string().max(20).optional().nullable(),
+  email: emptyToNull.pipe(z.string().email().nullable()).optional().nullable(),
+  phone: emptyToNull.pipe(z.string().regex(/^\d+$/, 'Phone must contain only numbers').max(50).nullable()).optional().nullable(),
+  address: emptyToNull.pipe(z.string().max(500).nullable()).optional().nullable(),
+  city: emptyToNull.pipe(z.string().max(100).nullable()).optional().nullable(),
+  province: emptyToNull.pipe(z.string().max(50).nullable()).optional().nullable(),
+  postalCode: emptyToNull.pipe(z.string().max(20).nullable()).optional().nullable(),
   customerType: z.enum(['QC', 'ON']).default('QC'),
-  notes: z.string().optional().nullable(),
+  notes: emptyToNull.pipe(z.string().nullable()).optional().nullable(),
 });
 
 export const updateCustomerSchema = createCustomerSchema.partial();

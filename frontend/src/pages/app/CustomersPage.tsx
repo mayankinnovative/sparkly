@@ -135,7 +135,7 @@ export function CustomersPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>Phone</Label>
-                  <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                  <Input value={form.phone} onChange={(e) => { const v = e.target.value; if (v === '' || /^\d+$/.test(v)) setForm({ ...form, phone: v }); }} inputMode="numeric" pattern="\d*" />
                 </div>
                 <div className="space-y-2">
                   <Label>Address</Label>
