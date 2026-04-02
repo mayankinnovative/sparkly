@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/auth';
 import { t } from '@/lib/i18n';
 import api from '@/lib/api';
 import type { Customer, CustomerType, Language } from '@/types';
-import { Plus, Users, X, Loader2, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Users, X, Loader2, Pencil, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const emptyForm = { name: '', email: '', phone: '', address: '', city: '', province: '', postalCode: '', customerType: 'QC' as CustomerType };
 
@@ -24,6 +24,21 @@ export function CustomersPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const formRef = useRef<HTMLDivElement>(null);
+
+  const showFeedback = (type: 'success' | 'error', message: string) => {
+    setFeedback({ type, message });
+    setTimeout(() => setFeedback(null), 4000);
+  };
+
+  const getErrorMessage = (err: unknown): string => {
+    const axiosErr = err as { response?: { data?: { message?: string; error?: { details?: { field: string; message: string }[] } } } };
+    if (axiosErr?.response?.data?.error?.details?.length) {
+      return axiosErr.response.data.error.details.map((d) => `${d.field}: ${d.message}`).join(', ');
+    }
+    return axiosErr?.response?.data?.message || 'Something went wrong';
+  };
 
   const fetchCustomers = () => {
     api.get('/customers')
@@ -46,13 +61,16 @@ export function CustomersPage() {
     try {
       if (editingId) {
         await api.patch(`/customers/${editingId}`, form);
+        showFeedback('success', 'Customer updated successfully');
       } else {
         await api.post('/customers', form);
+        showFeedback('success', 'Customer created successfully');
       }
       resetForm();
       fetchCustomers();
     } catch (err) {
       console.error(err);
+      showFeedback('error', getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -71,15 +89,18 @@ export function CustomersPage() {
       customerType: c.customerType || 'QC',
     });
     setShowForm(true);
+    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   };
 
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
       await api.delete(`/customers/${deleteId}`);
+      showFeedback('success', 'Customer deleted successfully');
       fetchCustomers();
     } catch (err) {
       console.error(err);
+      showFeedback('error', getErrorMessage(err));
     } finally {
       setDeleteId(null);
     }
@@ -107,8 +128,15 @@ export function CustomersPage() {
         </div>
       </div>
 
+      {feedback && (
+        <div className={`flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium ${feedback.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+          {feedback.type === 'success' ? <CheckCircle2 className="h-4 w-4 flex-shrink-0" /> : <AlertCircle className="h-4 w-4 flex-shrink-0" />}
+          {feedback.message}
+        </div>
+      )}
+
       {showForm && (
-        <Card>
+        <Card ref={formRef}>
           <CardContent className="p-6">
             <h2 className="text-lg font-semibold mb-4">{editingId ? t('edit', lang) : t('create', lang)} {t('customer', lang)}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
