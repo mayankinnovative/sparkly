@@ -107,6 +107,49 @@ export class DashboardService {
       .slice(0, limit);
   }
 
+  async getRecurringSummary(accountId: string | null) {
+    const tenant = tenantFilter(accountId);
+
+    const activeRecurring = await prisma.recurringJob.findMany({
+      where: { ...tenant, status: 'active' },
+      include: { customer: { select: { id: true, name: true } } },
+      orderBy: { nextRun: 'asc' },
+    });
+
+    // Calculate monthly recurring revenue (normalize all frequencies to monthly)
+    let monthlyRecurringRevenue = 0;
+    for (const rj of activeRecurring) {
+      const price = rj.price.toNumber();
+      switch (rj.frequency) {
+        case 'daily':
+          monthlyRecurringRevenue += price * 30;
+          break;
+        case 'weekly':
+          monthlyRecurringRevenue += price * 4.33;
+          break;
+        case 'monthly':
+          monthlyRecurringRevenue += price;
+          break;
+      }
+    }
+
+    // Next 3 upcoming jobs
+    const upcomingJobs = activeRecurring.slice(0, 3).map((rj) => ({
+      id: rj.id,
+      title: rj.title,
+      customerName: rj.customer?.name || 'Unknown',
+      frequency: rj.frequency,
+      price: rj.price.toNumber(),
+      nextRun: rj.nextRun,
+    }));
+
+    return {
+      monthlyRecurringRevenue: Math.round(monthlyRecurringRevenue * 100) / 100,
+      activeCount: activeRecurring.length,
+      upcomingJobs,
+    };
+  }
+
   async getTaxSummary(accountId: string | null, from: string, to: string) {
     const invoices = await prisma.invoice.findMany({
       where: {

@@ -23,6 +23,7 @@ import { TaxFilingPage } from '@/pages/app/TaxFilingPage';
 import { RevenueReportPage } from '@/pages/app/RevenueReportPage';
 import { PricingPage } from '@/pages/app/PricingPage';
 import { SettingsPage } from '@/pages/app/SettingsPage';
+import { SuperAdminPage } from '@/pages/app/SuperAdminPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { accessToken } = useAuthStore();
@@ -67,6 +68,7 @@ export default function App() {
           <Route path="revenue-report" element={<RevenueReportPage />} />
           <Route path="pricing" element={<PricingPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="super-admin" element={<SuperAdminPage />} />
         </Route>
 
         {/* Catch-all */}

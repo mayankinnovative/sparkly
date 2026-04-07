@@ -123,4 +123,137 @@ router.put('/tax-configs/:province', async (req, res) => {
   }
 });
 
+// KPI stats (MRR, churn, etc.)
+router.get('/kpi', async (req, res) => {
+  try {
+    const { userId } = (req as AuthenticatedRequest).user!;
+    const data = await adminService.getKpiStats(userId);
+    res.json(successResponse(data));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
+// Reset password for a user
+router.post('/users/:id/reset-password', async (req, res) => {
+  try {
+    const { userId } = (req as AuthenticatedRequest).user!;
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json(errorResponse('Password must be at least 8 characters', 'INVALID_PASSWORD'));
+    }
+    await adminService.resetUserPassword(userId, req.params.id, newPassword);
+    res.json(successResponse(null, 'Password reset successfully'));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
+// Login As (impersonation)
+router.post('/users/:id/login-as', async (req, res) => {
+  try {
+    const { userId } = (req as AuthenticatedRequest).user!;
+    const data = await adminService.loginAs(userId, req.params.id);
+    res.json(successResponse(data));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
+// Discount codes
+router.get('/discount-codes', async (req, res) => {
+  try {
+    const { userId } = (req as AuthenticatedRequest).user!;
+    const codes = await adminService.listDiscountCodes(userId);
+    res.json(successResponse(codes));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
+router.post('/discount-codes', async (req, res) => {
+  try {
+    const { userId } = (req as AuthenticatedRequest).user!;
+    const { code, discountType, discountValue, maxUses, expiresAt } = req.body;
+    if (!code || !discountType || discountValue == null) {
+      return res.status(400).json(errorResponse('code, discountType, and discountValue are required', 'MISSING_PARAMS'));
+    }
+    if (!['percentage', 'fixed'].includes(discountType)) {
+      return res.status(400).json(errorResponse('discountType must be percentage or fixed', 'INVALID_TYPE'));
+    }
+    const result = await adminService.createDiscountCode(userId, { code, discountType, discountValue: parseFloat(discountValue), maxUses: maxUses ? parseInt(maxUses) : undefined, expiresAt });
+    res.status(201).json(successResponse(result));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
+router.patch('/discount-codes/:id/toggle', async (req, res) => {
+  try {
+    const { userId } = (req as AuthenticatedRequest).user!;
+    const result = await adminService.toggleDiscountCode(userId, req.params.id);
+    res.json(successResponse(result));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
+router.delete('/discount-codes/:id', async (req, res) => {
+  try {
+    const { userId } = (req as AuthenticatedRequest).user!;
+    await adminService.deleteDiscountCode(userId, req.params.id);
+    res.json(successResponse(null, 'Discount code deleted'));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
+// Platform settings
+router.get('/settings', async (req, res) => {
+  try {
+    const { userId } = (req as AuthenticatedRequest).user!;
+    const settings = await adminService.getPlatformSettings(userId);
+    res.json(successResponse(settings));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
+router.put('/settings/:key', async (req, res) => {
+  try {
+    const { userId } = (req as AuthenticatedRequest).user!;
+    const { value } = req.body;
+    if (value === undefined) {
+      return res.status(400).json(errorResponse('value is required', 'MISSING_PARAMS'));
+    }
+    const setting = await adminService.upsertPlatformSetting(userId, req.params.key, value);
+    res.json(successResponse(setting));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
+// Subscription payments for revenue audit
+router.get('/subscription-payments', async (req, res) => {
+  try {
+    const { userId } = (req as AuthenticatedRequest).user!;
+    const page = parseInt(req.query.page as string, 10) || 1;
+    const pageSize = parseInt(req.query.pageSize as string, 10) || 50;
+    const data = await adminService.getSubscriptionPayments(userId, page, pageSize);
+    res.json(successResponse(data));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
 export default router;

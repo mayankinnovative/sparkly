@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/auth';
 import { t } from '@/lib/i18n';
 import api from '@/lib/api';
 import type { Customer, CustomerType, Language } from '@/types';
-import { Plus, Users, X, Loader2, Pencil, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Plus, Users, X, Loader2, Pencil, Trash2, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const emptyForm = { name: '', email: '', phone: '', address: '', city: '', province: '', postalCode: '', customerType: 'QC' as CustomerType };
 
@@ -26,6 +26,8 @@ export function CustomersPage() {
   const [form, setForm] = useState(emptyForm);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 12;
 
   const showFeedback = (type: 'success' | 'error', message: string) => {
     setFeedback({ type, message });
@@ -109,6 +111,12 @@ export function CustomersPage() {
   const filtered = customers.filter(
     (c) => !filter || c.name.toLowerCase().includes(filter.toLowerCase()) || c.email?.toLowerCase().includes(filter.toLowerCase()),
   );
+
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  // Reset page when filter changes
+  useEffect(() => { setPage(1); }, [filter]);
 
   return (
     <div className="space-y-6">
@@ -206,8 +214,9 @@ export function CustomersPage() {
           </CardContent>
         </Card>
       ) : (
+        <>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((c) => (
+          {paginated.map((c) => (
             <Card key={c.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-2">
@@ -240,6 +249,23 @@ export function CustomersPage() {
             </Card>
           ))}
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500">
+              Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of {filtered.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+                <ChevronLeft className="h-4 w-4" /> Previous
+              </Button>
+              <span className="text-sm font-medium">Page {page} of {totalPages}</span>
+              <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+                Next <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+        </>
       )}
       <ConfirmDialog
         open={!!deleteId}

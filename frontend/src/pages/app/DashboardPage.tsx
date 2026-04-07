@@ -7,7 +7,7 @@ import api from '@/lib/api';
 import type { DashboardOverview, Language } from '@/types';
 import {
   DollarSign, TrendingDown, TrendingUp, Briefcase,
-  BarChart3, Users,
+  BarChart3, Users, CalendarClock,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -21,6 +21,11 @@ export function DashboardPage() {
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [monthlyRevenue, setMonthlyRevenue] = useState<{ month: number; revenue: number }[]>([]);
   const [topClients, setTopClients] = useState<{ id: string; name: string; revenue: number }[]>([]);
+  const [recurringSummary, setRecurringSummary] = useState<{
+    monthlyRecurringRevenue: number;
+    activeCount: number;
+    upcomingJobs: { id: string; title: string; customerName: string; frequency: string; price: number; nextRun: string }[];
+  } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,11 +38,13 @@ export function DashboardPage() {
       api.get('/dashboard/overview', { params: { from, to } }),
       api.get('/dashboard/monthly-revenue', { params: { year } }),
       api.get('/dashboard/top-clients', { params: { from, to, limit: 5 } }),
+      api.get('/dashboard/recurring-summary').catch(() => ({ data: { data: null } })),
     ])
-      .then(([ov, mr, tc]) => {
+      .then(([ov, mr, tc, rs]) => {
         setOverview(ov.data.data);
         setMonthlyRevenue(mr.data.data);
         setTopClients(tc.data.data);
+        setRecurringSummary(rs.data.data);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -87,6 +94,40 @@ export function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      {/* Recurring Revenue Card */}
+      {recurringSummary && (recurringSummary.activeCount > 0 || recurringSummary.monthlyRecurringRevenue > 0) && (
+        <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <CalendarClock className="h-5 w-5 text-blue-600" />
+                  <h3 className="font-semibold text-blue-900">Recurring Revenue</h3>
+                </div>
+                <p className="text-3xl font-bold text-blue-700">${recurringSummary.monthlyRecurringRevenue.toLocaleString()}<span className="text-sm font-normal text-blue-500">/month</span></p>
+                <p className="text-sm text-blue-500 mt-1">{recurringSummary.activeCount} active recurring job{recurringSummary.activeCount !== 1 ? 's' : ''}</p>
+              </div>
+              {recurringSummary.upcomingJobs.length > 0 && (
+                <div className="text-right">
+                  <p className="text-xs font-medium text-blue-500 uppercase mb-2">Next Upcoming</p>
+                  <div className="space-y-1.5">
+                    {recurringSummary.upcomingJobs.map((job) => (
+                      <div key={job.id} className="text-sm">
+                        <span className="font-medium text-gray-800">{job.customerName}</span>
+                        <span className="text-gray-400 mx-1">·</span>
+                        <span className="text-gray-500">${job.price}</span>
+                        <span className="text-gray-400 mx-1">·</span>
+                        <span className="text-gray-400 capitalize">{job.frequency}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Monthly revenue chart */}

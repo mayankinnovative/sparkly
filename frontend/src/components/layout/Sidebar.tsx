@@ -4,7 +4,7 @@ import { t, type TranslationKey } from '@/lib/i18n';
 import {
   LayoutDashboard, ClipboardList, CalendarClock, Receipt,
   DollarSign, Users, FileText, Link2, Calculator, BarChart3,
-  CreditCard, Settings, LogOut, Lock, Sparkles,
+  CreditCard, Settings, LogOut, Lock, Sparkles, ShieldCheck,
 } from 'lucide-react';
 import type { Plan, Language } from '@/types';
 
@@ -83,6 +83,23 @@ export function Sidebar() {
             </NavLink>
           );
         })}
+
+        {/* Super Admin nav item */}
+        {isSuperAdmin && (
+          <NavLink
+            to="/app/super-admin"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-red-50 text-red-600'
+                  : 'text-red-500 hover:bg-red-50'
+              }`
+            }
+          >
+            <ShieldCheck className="h-5 w-5 flex-shrink-0" />
+            <span className="truncate">Super Admin</span>
+          </NavLink>
+        )}
       </nav>
 
       {/* Footer */}

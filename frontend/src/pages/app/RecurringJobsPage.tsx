@@ -10,7 +10,7 @@ import { t } from '@/lib/i18n';
 import api from '@/lib/api';
 import type { RecurringJob, Customer, Language } from '@/types';
 import { format } from 'date-fns';
-import { CalendarClock, Lock, Plus, X, Loader2, Pencil, Trash2 } from 'lucide-react';
+import { CalendarClock, Lock, Plus, X, Loader2, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const emptyForm = {
   customerId: '',
@@ -33,6 +33,8 @@ export function RecurringJobsPage() {
   const [editingJob, setEditingJob] = useState<RecurringJob | null>(null);
   const [editForm, setEditForm] = useState(emptyForm);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   const hasAccess = hasPlanAccess(account?.plan, 'pro');
 
@@ -320,7 +322,11 @@ export function RecurringJobsPage() {
             {t('noData', lang)}
           </CardContent>
         </Card>
-      ) : (
+      ) : (() => {
+        const totalPages = Math.ceil(jobs.length / pageSize);
+        const paginated = jobs.slice((page - 1) * pageSize, page * pageSize);
+        return (
+        <>
         <div className="bg-white rounded-lg border overflow-hidden">
           <table className="w-full">
             <thead className="bg-gray-50">
@@ -335,7 +341,7 @@ export function RecurringJobsPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {jobs.map((rj) => (
+              {paginated.map((rj) => (
                 <tr key={rj.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm font-medium">{rj.customer?.name}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">{rj.description || rj.title}</td>
@@ -369,7 +375,25 @@ export function RecurringJobsPage() {
             </tbody>
           </table>
         </div>
-      )}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500">
+              Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, jobs.length)} of {jobs.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+                <ChevronLeft className="h-4 w-4" /> Previous
+              </Button>
+              <span className="text-sm font-medium">Page {page} of {totalPages}</span>
+              <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+                Next <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+        </>
+        );
+      })()}
 
       <ConfirmDialog
         open={!!deleteId}

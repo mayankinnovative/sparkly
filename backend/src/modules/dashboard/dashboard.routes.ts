@@ -50,6 +50,17 @@ router.get('/top-clients', async (req, res) => {
   }
 });
 
+router.get('/recurring-summary', async (req, res) => {
+  try {
+    const accountId = req.user!.accountId;
+    const data = await dashboardService.getRecurringSummary(accountId);
+    res.json(successResponse(data));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
 router.get('/tax-summary', async (req, res) => {
   try {
     const accountId = req.user!.accountId;

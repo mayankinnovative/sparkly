@@ -10,7 +10,7 @@ import { t } from '@/lib/i18n';
 import api from '@/lib/api';
 import type { Job, Customer, Language } from '@/types';
 import { format } from 'date-fns';
-import { CheckCircle2, Clock, XCircle, Play, Pencil, Trash2, X, Loader2 } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, Play, Pencil, Trash2, X, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const statusConfig: Record<string, { variant: 'info' | 'warning' | 'success' | 'destructive'; icon: React.ElementType }> = {
   pending: { variant: 'info', icon: Clock },
@@ -39,6 +39,8 @@ export function AllJobsPage() {
     status: 'pending' as string,
     notes: '',
   });
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   const fetchJobs = () => {
     api.get('/jobs')
@@ -112,6 +114,12 @@ export function AllJobsPage() {
       (j.description || '').toLowerCase().includes(filter.toLowerCase()) ||
       j.customer?.name.toLowerCase().includes(filter.toLowerCase()),
   );
+
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  // Reset page when filter changes
+  useEffect(() => { setPage(1); }, [filter]);
 
   if (loading) {
     return <div className="flex items-center justify-center h-64"><p className="text-gray-500">{t('loading', lang)}</p></div>;
@@ -199,6 +207,15 @@ export function AllJobsPage() {
                     placeholder="Optional"
                   />
                 </div>
+                <div className="space-y-2 col-span-2">
+                  <Label>Notes</Label>
+                  <textarea
+                    value={editForm.notes}
+                    onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                    placeholder="Optional notes..."
+                    className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px] resize-y"
+                  />
+                </div>
               </div>
               <div className="flex gap-2">
                 <Button type="submit" disabled={saving}>
@@ -217,6 +234,7 @@ export function AllJobsPage() {
           <CardContent className="p-12 text-center text-gray-500">{t('noData', lang)}</CardContent>
         </Card>
       ) : (
+        <>
         <div className="bg-white rounded-lg border overflow-hidden">
           <table className="w-full">
             <thead className="bg-gray-50">
@@ -230,7 +248,7 @@ export function AllJobsPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {filtered.map((job) => {
+              {paginated.map((job) => {
                 const cfg = statusConfig[job.status] || statusConfig.scheduled;
                 const Icon = cfg.icon;
                 return (
@@ -268,6 +286,24 @@ export function AllJobsPage() {
             </tbody>
           </table>
         </div>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500">
+              Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of {filtered.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+                <ChevronLeft className="h-4 w-4" /> Previous
+              </Button>
+              <span className="text-sm font-medium">Page {page} of {totalPages}</span>
+              <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+                Next <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+        </>
       )}
 
       <ConfirmDialog
