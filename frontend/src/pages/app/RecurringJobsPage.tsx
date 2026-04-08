@@ -218,6 +218,7 @@ export function RecurringJobsPage() {
                     type="datetime-local"
                     value={form.nextRun}
                     onChange={(e) => setForm({ ...form, nextRun: e.target.value })}
+                    min={new Date().toISOString().slice(0, 16)}
                     required
                   />
                 </div>
@@ -297,6 +298,7 @@ export function RecurringJobsPage() {
                     type="datetime-local"
                     value={editForm.nextRun}
                     onChange={(e) => setEditForm({ ...editForm, nextRun: e.target.value })}
+                    min={new Date().toISOString().slice(0, 16)}
                     required
                   />
                 </div>
