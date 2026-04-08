@@ -33,6 +33,7 @@ export function RecurringJobsPage() {
   const [editingJob, setEditingJob] = useState<RecurringJob | null>(null);
   const [editForm, setEditForm] = useState(emptyForm);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
@@ -114,15 +115,22 @@ export function RecurringJobsPage() {
   };
 
   const handlePauseResume = async (rj: RecurringJob) => {
+    const newStatus = rj.status === 'active' ? 'paused' : 'active';
+    // Optimistic update
+    setJobs((prev) => prev.map((j) => j.id === rj.id ? { ...j, status: newStatus } : j));
+    setTogglingId(rj.id);
     try {
       if (rj.status === 'active') {
         await api.patch(`/recurring-jobs/${rj.id}/cancel`);
       } else {
         await api.put(`/recurring-jobs/${rj.id}`, { status: 'active' });
       }
-      fetchJobs();
     } catch (err) {
+      // Revert on failure
+      setJobs((prev) => prev.map((j) => j.id === rj.id ? { ...j, status: rj.status } : j));
       console.error(err);
+    } finally {
+      setTogglingId(null);
     }
   };
 
@@ -359,7 +367,9 @@ export function RecurringJobsPage() {
                         size="sm"
                         variant={rj.status === 'active' ? 'destructive' : 'outline'}
                         onClick={() => handlePauseResume(rj)}
+                        disabled={togglingId === rj.id}
                       >
+                        {togglingId === rj.id && <Loader2 className="h-3 w-3 animate-spin" />}
                         {rj.status === 'active' ? 'Pause' : 'Resume'}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => handleEdit(rj)}>
