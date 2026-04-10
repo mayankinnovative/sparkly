@@ -125,6 +125,7 @@ export function RecurringJobsPage() {
       } else {
         await api.put(`/recurring-jobs/${rj.id}`, { status: 'active' });
       }
+      fetchJobs();
     } catch (err) {
       // Revert on failure
       setJobs((prev) => prev.map((j) => j.id === rj.id ? { ...j, status: rj.status } : j));

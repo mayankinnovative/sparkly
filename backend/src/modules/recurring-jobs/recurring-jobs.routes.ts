@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth';
-import { requireRole } from '../../middleware/rbac';
 import { requirePlan } from '../../middleware/planGate';
 import { tenantScope } from '../../middleware/tenantScope';
 import { validate } from '../../middleware/validate';
@@ -53,7 +52,7 @@ router.put('/:id', validate(updateRecurringJobSchema), async (req, res) => {
   }
 });
 
-router.patch('/:id/cancel', requireRole('account_owner'), async (req, res) => {
+router.patch('/:id/cancel', async (req, res) => {
   try {
     const job = await recurringJobsService.cancel(req.user!.accountId, req.params.id as string);
     res.json(successResponse(job, 'Recurring job cancelled'));
