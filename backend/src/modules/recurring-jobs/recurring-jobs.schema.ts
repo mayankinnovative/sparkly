@@ -11,9 +11,7 @@ export const createRecurringJobSchema = z.object({
   duration: z.number().min(0).default(0),
   supplies: z.number().min(0).default(0),
   staffCount: z.number().int().min(1).default(1),
-  nextRun: z.string().datetime().refine((val) => new Date(val) >= new Date(), {
-    message: 'Next run date cannot be in the past',
-  }),
+  nextRun: z.string().datetime(),
   delivery: z.string().max(50).default('Email'),
 });
 
@@ -23,9 +21,7 @@ export const updateRecurringJobSchema = z.object({
   description: z.string().max(1000).optional().nullable(),
   frequency: z.enum(['daily', 'weekly', 'monthly']).optional(),
   price: z.number().min(0).optional(),
-  nextRun: z.string().datetime().refine((val) => new Date(val) >= new Date(), {
-    message: 'Next run date cannot be in the past',
-  }).optional(),
+  nextRun: z.string().datetime().optional(),
   status: z.enum(['active', 'paused', 'draft']).optional(),
 });
 

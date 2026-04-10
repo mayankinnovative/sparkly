@@ -12,14 +12,14 @@ import type { RecurringJob, Customer, Language } from '@/types';
 import { formatDateTz, nowLocalInput } from '@/lib/timezone';
 import { CalendarClock, Lock, Plus, X, Loader2, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const emptyForm = {
+const freshForm = () => ({
   customerId: '',
   title: '',
   description: '',
   frequency: 'weekly' as 'daily' | 'weekly' | 'monthly',
   price: '',
   nextRun: nowLocalInput(),
-};
+});
 
 export function RecurringJobsPage() {
   const { language, account } = useAuthStore();
@@ -29,9 +29,9 @@ export function RecurringJobsPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(freshForm);
   const [editingJob, setEditingJob] = useState<RecurringJob | null>(null);
-  const [editForm, setEditForm] = useState(emptyForm);
+  const [editForm, setEditForm] = useState(freshForm);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -62,7 +62,7 @@ export function RecurringJobsPage() {
         nextRun: new Date(form.nextRun).toISOString(),
       });
       setShowForm(false);
-      setForm(emptyForm);
+      setForm(freshForm);
       fetchJobs();
     } catch (err) {
       console.error(err);
