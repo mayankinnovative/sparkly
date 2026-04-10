@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/store/auth';
 import { t } from '@/lib/i18n';
 import api from '@/lib/api';
+import { formatDateTz } from '@/lib/timezone';
 import type { Language } from '@/types';
 import { Calculator } from 'lucide-react';
 
@@ -27,7 +28,7 @@ export function TaxFilingPage() {
 
   useEffect(() => {
     const now = new Date();
-    const from = `${now.getFullYear()}-01-01T00:00:00.000Z`;
+    const from = `${formatDateTz(now, 'yyyy')}-01-01T00:00:00.000Z`;
     const to = now.toISOString();
     api.get('/dashboard/tax-summary', { params: { from, to } })
       .then(({ data }) => setSummary(data.data))

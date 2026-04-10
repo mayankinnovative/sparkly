@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/auth';
 import { t } from '@/lib/i18n';
 import api from '@/lib/api';
 import type { Invoice, Language } from '@/types';
-import { format } from 'date-fns';
+import { formatDateTz } from '@/lib/timezone';
 import { FileText, ExternalLink } from 'lucide-react';
 
 const statusVariant: Record<string, 'info' | 'warning' | 'success' | 'destructive' | 'secondary'> = {
@@ -79,7 +79,7 @@ export function InvoicesPage() {
                   <td className="px-4 py-3 text-sm">${inv.subtotal}</td>
                   <td className="px-4 py-3 text-sm">${inv.totalTax}</td>
                   <td className="px-4 py-3 text-sm font-bold">${inv.totalAmount}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{format(new Date(inv.dueDate), 'MMM d, yyyy')}</td>
+                  <td className="px-4 py-3 text-sm text-gray-500">{formatDateTz(inv.dueDate, 'MMM d, yyyy')}</td>
                   <td className="px-4 py-3">
                     <Badge variant={statusVariant[inv.status] || 'secondary'} className="capitalize">
                       {t(inv.status as any, lang)}

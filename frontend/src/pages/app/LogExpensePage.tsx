@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/store/auth';
 import { t } from '@/lib/i18n';
 import api from '@/lib/api';
+import { nowLocalInput } from '@/lib/timezone';
 import type { Language } from '@/types';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
@@ -21,7 +22,7 @@ export function LogExpensePage() {
     category: 'supplies',
     description: '',
     amount: '',
-    date: new Date().toISOString().slice(0, 16),
+    date: nowLocalInput(),
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -37,7 +38,7 @@ export function LogExpensePage() {
         date: new Date(form.date).toISOString(),
       });
       setSuccess(true);
-      setForm({ category: 'supplies', description: '', amount: '', date: new Date().toISOString().slice(0, 16) });
+      setForm({ category: 'supplies', description: '', amount: '', date: nowLocalInput() });
     } catch (err) {
       console.error(err);
     } finally {

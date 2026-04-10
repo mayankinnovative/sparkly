@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAuthStore } from '@/store/auth';
+import { detectTimezoneFromIP } from '@/lib/timezone';
 
 // Layouts
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -38,6 +40,11 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  // Detect timezone from IP on first load
+  useEffect(() => {
+    detectTimezoneFromIP().catch(() => {});
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

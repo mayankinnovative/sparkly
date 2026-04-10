@@ -23,6 +23,7 @@ import adminRoutes from './modules/admin/admin.routes';
 
 // Service imports (for cron)
 import { recurringJobsService } from './modules/recurring-jobs/recurring-jobs.service';
+import { detectTimezone } from './middleware/timezone';
 
 const app = express();
 
@@ -35,6 +36,20 @@ app.use(cors({ origin: config.corsOrigin, credentials: true }));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(detectTimezone);
+
+// ─── Timezone detection (IP-based) ──────────────────────────────────────────
+app.get('/api/v1/timezone', (req, res) => {
+  const vercelTz = req.headers['x-vercel-ip-timezone'] as string | undefined;
+  const clientTz = req.headers['x-timezone'] as string | undefined;
+  res.json({
+    success: true,
+    data: {
+      timezone: vercelTz || clientTz || 'UTC',
+      detectedFrom: vercelTz ? 'ip' : clientTz ? 'browser' : 'fallback',
+    },
+  });
+});
 
 // ─── Health check ───────────────────────────────────────────────────────────
 app.get('/api/v1/health', async (_req, res) => {

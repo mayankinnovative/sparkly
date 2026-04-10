@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/store/auth';
 import { t } from '@/lib/i18n';
 import api from '@/lib/api';
+import { nowLocalInput } from '@/lib/timezone';
 import type { Customer, Language } from '@/types';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
@@ -17,7 +18,7 @@ export function LogJobPage() {
     customerId: '',
     title: '',
     description: '',
-    scheduledDate: new Date().toISOString().slice(0, 16),
+    scheduledDate: nowLocalInput(),
     price: '',
     notes: '',
   });
@@ -39,7 +40,7 @@ export function LogJobPage() {
         scheduledDate: new Date(form.scheduledDate).toISOString(),
       });
       setSuccess(true);
-      setForm({ customerId: '', title: '', description: '', scheduledDate: new Date().toISOString().slice(0, 16), price: '', notes: '' });
+      setForm({ customerId: '', title: '', description: '', scheduledDate: nowLocalInput(), price: '', notes: '' });
     } catch (err) {
       console.error(err);
     } finally {

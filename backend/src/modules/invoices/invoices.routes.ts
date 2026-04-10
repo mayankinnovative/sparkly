@@ -60,7 +60,7 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', validate(createInvoiceSchema), async (req, res) => {
   try {
-    const invoice = await invoicesService.create(req.user!.accountId, req.body);
+    const invoice = await invoicesService.create(req.user!.accountId, req.body, req.timezone);
     res.status(201).json(successResponse(invoice));
   } catch (err: any) {
     const status = err.statusCode || 500;

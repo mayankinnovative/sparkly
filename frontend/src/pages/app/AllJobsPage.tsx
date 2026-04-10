@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/auth';
 import { t } from '@/lib/i18n';
 import api from '@/lib/api';
 import type { Job, Customer, Language } from '@/types';
-import { format } from 'date-fns';
+import { formatDateTz } from '@/lib/timezone';
 import { CheckCircle2, Clock, XCircle, Play, Pencil, Trash2, X, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const statusConfig: Record<string, { variant: 'info' | 'warning' | 'success' | 'destructive'; icon: React.ElementType }> = {
@@ -69,7 +69,7 @@ export function AllJobsPage() {
       customerId: job.customerId || '',
       title: job.title || '',
       description: job.description || '',
-      scheduledDate: job.scheduledDate ? new Date(job.scheduledDate).toISOString().slice(0, 16) : '',
+      scheduledDate: job.scheduledDate ? formatDateTz(job.scheduledDate, "yyyy-MM-dd'T'HH:mm") : '',
       price: String(job.price || 0),
       status: job.status,
       notes: job.notes || '',
@@ -256,7 +256,7 @@ export function AllJobsPage() {
                     <td className="px-4 py-3 text-sm font-medium">{job.customer?.name}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{job.description || job.title}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">
-                      {format(new Date(job.scheduledDate), 'MMM d, yyyy')}
+                      {formatDateTz(job.scheduledDate, 'MMM d, yyyy')}
                     </td>
                     <td className="px-4 py-3 text-sm font-medium">${Number(job.price).toFixed(2)}</td>
                     <td className="px-4 py-3">

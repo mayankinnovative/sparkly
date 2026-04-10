@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import api from '@/lib/api';
-import { format } from 'date-fns';
+import { formatDateTz } from '@/lib/timezone';
 import {
   LayoutDashboard, Users, CreditCard, Settings, Activity,
   ChevronLeft, ChevronRight, Loader2, Eye, KeyRound, LogIn,
@@ -259,7 +259,7 @@ function UsersTenantsTab() {
                   <td className="px-4 py-3 text-sm">{acc.province}</td>
                   <td className="px-4 py-3 text-sm">{acc._count?.users || 0}</td>
                   <td className="px-4 py-3 text-sm">{acc._count?.jobs || 0}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{format(new Date(acc.createdAt), 'MMM d, yyyy')}</td>
+                  <td className="px-4 py-3 text-sm text-gray-500">{formatDateTz(acc.createdAt, 'MMM d, yyyy')}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1 flex-wrap">
                       <Button size="sm" variant="ghost" onClick={() => viewDetails(acc.id)}>
@@ -429,7 +429,7 @@ function PaymentsTab() {
                 <td className="px-4 py-3 text-sm font-medium">${sub.monthlyAmount}</td>
                 <td className="px-4 py-3 text-sm text-red-500">${sub.stripeFee}</td>
                 <td className="px-4 py-3 text-sm font-medium text-green-600">${sub.netRevenue}</td>
-                <td className="px-4 py-3 text-sm text-gray-500">{format(new Date(sub.startDate), 'MMM d, yyyy')}</td>
+                <td className="px-4 py-3 text-sm text-gray-500">{formatDateTz(sub.startDate, 'MMM d, yyyy')}</td>
               </tr>
             ))}
           </tbody>
@@ -631,7 +631,7 @@ function SettingsPromosTab() {
                     </span>
                     {c.expiresAt && (
                       <span className="text-xs text-gray-400">
-                        Expires: {format(new Date(c.expiresAt), 'MMM d, yyyy')}
+                        Expires: {formatDateTz(c.expiresAt, 'MMM d, yyyy')}
                       </span>
                     )}
                   </div>
@@ -733,7 +733,7 @@ function AuditLogView({ data, page, onPageChange }: { data: any; page: number; o
           <tbody className="divide-y">
             {data.actions.map((a: any) => (
               <tr key={a.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 text-xs text-gray-500">{format(new Date(a.timestamp), 'MMM d, HH:mm')}</td>
+                <td className="px-4 py-3 text-xs text-gray-500">{formatDateTz(a.timestamp, 'MMM d, HH:mm')}</td>
                 <td className="px-4 py-3 text-sm">{a.adminUser?.firstName} {a.adminUser?.lastName}</td>
                 <td className="px-4 py-3">
                   <Badge variant="secondary" className="text-xs">{a.action}</Badge>
@@ -770,7 +770,7 @@ function SchedulerLogView({ data, page, onPageChange }: { data: any; page: numbe
           <tbody className="divide-y">
             {data.logs.map((l: any) => (
               <tr key={l.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 text-xs text-gray-500">{format(new Date(l.executedAt), 'MMM d, HH:mm:ss')}</td>
+                <td className="px-4 py-3 text-xs text-gray-500">{formatDateTz(l.executedAt, 'MMM d, HH:mm:ss')}</td>
                 <td className="px-4 py-3 text-xs font-mono text-gray-600">{l.recurringJobId.substring(0, 8)}...</td>
                 <td className="px-4 py-3">
                   <Badge variant={l.status === 'success' ? 'success' : l.status === 'skipped' ? 'warning' : 'destructive'}>

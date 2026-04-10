@@ -9,7 +9,7 @@ import { useAuthStore, hasPlanAccess } from '@/store/auth';
 import { t } from '@/lib/i18n';
 import api from '@/lib/api';
 import type { RecurringJob, Customer, Language } from '@/types';
-import { format } from 'date-fns';
+import { formatDateTz, nowLocalInput } from '@/lib/timezone';
 import { CalendarClock, Lock, Plus, X, Loader2, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const emptyForm = {
@@ -18,7 +18,7 @@ const emptyForm = {
   description: '',
   frequency: 'weekly' as 'daily' | 'weekly' | 'monthly',
   price: '',
-  nextRun: new Date().toISOString().slice(0, 16),
+  nextRun: nowLocalInput(),
 };
 
 export function RecurringJobsPage() {
@@ -79,7 +79,7 @@ export function RecurringJobsPage() {
       description: rj.description || '',
       frequency: rj.frequency || 'weekly',
       price: String(rj.price || 0),
-      nextRun: rj.nextRun ? new Date(rj.nextRun).toISOString().slice(0, 16) : '',
+      nextRun: rj.nextRun ? formatDateTz(rj.nextRun, "yyyy-MM-dd'T'HH:mm") : '',
     });
   };
 
@@ -219,7 +219,7 @@ export function RecurringJobsPage() {
                     type="datetime-local"
                     value={form.nextRun}
                     onChange={(e) => setForm({ ...form, nextRun: e.target.value })}
-                    min={new Date().toISOString().slice(0, 16)}
+                    min={nowLocalInput()}
                     required
                   />
                 </div>
@@ -299,7 +299,7 @@ export function RecurringJobsPage() {
                     type="datetime-local"
                     value={editForm.nextRun}
                     onChange={(e) => setEditForm({ ...editForm, nextRun: e.target.value })}
-                    min={new Date().toISOString().slice(0, 16)}
+                    min={nowLocalInput()}
                     required
                   />
                 </div>
@@ -360,7 +360,7 @@ export function RecurringJobsPage() {
                     <Badge variant={freqColor[rj.frequency] || 'secondary'} className="capitalize">{rj.frequency}</Badge>
                   </td>
                   <td className="px-4 py-3 text-sm font-medium">${Number(rj.price).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{format(new Date(rj.nextRun), 'MMM d, yyyy')}</td>
+                  <td className="px-4 py-3 text-sm text-gray-500">{formatDateTz(rj.nextRun, 'MMM d, yyyy')}</td>
                   <td className="px-4 py-3">
                     <Badge variant={statusColor[rj.status] || 'secondary'} className="capitalize">{rj.status}</Badge>
                   </td>

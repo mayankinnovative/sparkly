@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore, hasPlanAccess } from '@/store/auth';
 import { t } from '@/lib/i18n';
 import api from '@/lib/api';
+import { formatDateTz } from '@/lib/timezone';
 import type { PayrollEntry, Language } from '@/types';
 import { DollarSign, Lock, Calculator } from 'lucide-react';
 
@@ -33,7 +34,7 @@ export function PayrollPage() {
   useEffect(() => {
     if (!hasAccess) { setLoading(false); return; }
     const now = new Date();
-    const from = `${now.getFullYear()}-01-01T00:00:00.000Z`;
+    const from = `${formatDateTz(now, 'yyyy')}-01-01T00:00:00.000Z`;
     const to = now.toISOString();
     Promise.all([
       api.get('/payroll'),

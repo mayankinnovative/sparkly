@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/auth';
+import { getTimezone } from '@/lib/timezone';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api/v1',
@@ -11,6 +12,8 @@ api.interceptors.request.use((config) => {
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
+  // Send detected timezone so backend can use it for date operations
+  config.headers['x-timezone'] = getTimezone();
   // Send account context header for super_admin
   if (user?.role === 'super_admin' && selectedAccountId) {
     config.headers['x-account-id'] = selectedAccountId;

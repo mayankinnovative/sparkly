@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/store/auth';
 import { t } from '@/lib/i18n';
 import api from '@/lib/api';
+import { formatDateTz } from '@/lib/timezone';
 import type { DashboardOverview, Language } from '@/types';
 import { DollarSign, TrendingDown, TrendingUp } from 'lucide-react';
 import {
@@ -22,7 +23,7 @@ export function RevenueReportPage() {
 
   useEffect(() => {
     const now = new Date();
-    const year = now.getFullYear();
+    const year = parseInt(formatDateTz(now, 'yyyy'), 10);
     const from = `${year}-01-01T00:00:00.000Z`;
     const to = now.toISOString();
 

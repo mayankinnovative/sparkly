@@ -3,6 +3,7 @@ import { AppError, tenantFilter, requireAccountId } from '../../utils/response';
 import { CreateInvoiceInput, UpdateInvoiceInput } from './invoices.schema';
 import Stripe from 'stripe';
 import { config } from '../../config';
+import { todayInTimezone } from '../../utils/timezone';
 
 const stripe = new Stripe(config.stripe.secretKey);
 
@@ -47,7 +48,7 @@ export class InvoicesService {
     return invoice;
   }
 
-  async create(accountId: string | null, input: CreateInvoiceInput) {
+  async create(accountId: string | null, input: CreateInvoiceInput, timezone?: string) {
     const aid = requireAccountId(accountId);
     // Verify customer
     const customer = await prisma.customer.findFirst({
@@ -85,7 +86,7 @@ export class InvoicesService {
         subtotal,
         taxAmount,
         total,
-        issuedDate: new Date(),
+        issuedDate: todayInTimezone(timezone || 'UTC'),
         dueDate: new Date(input.dueDate),
         language: input.language ?? 'en',
         notes: input.notes,

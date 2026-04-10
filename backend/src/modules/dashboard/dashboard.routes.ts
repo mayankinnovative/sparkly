@@ -3,6 +3,7 @@ import { authenticate } from '../../middleware/auth';
 import { tenantScope } from '../../middleware/tenantScope';
 import { dashboardService } from './dashboard.service';
 import { successResponse, errorResponse } from '../../utils/response';
+import { nowInTimezone } from '../../utils/timezone';
 
 const router = Router();
 
@@ -26,7 +27,8 @@ router.get('/overview', async (req, res) => {
 router.get('/monthly-revenue', async (req, res) => {
   try {
     const accountId = req.user!.accountId;
-    const year = parseInt(req.query.year as string, 10) || new Date().getFullYear();
+    const localNow = nowInTimezone(req.timezone || 'UTC');
+    const year = parseInt(req.query.year as string, 10) || localNow.getUTCFullYear();
     const data = await dashboardService.getMonthlyRevenue(accountId, year);
     res.json(successResponse(data));
   } catch (err: any) {
