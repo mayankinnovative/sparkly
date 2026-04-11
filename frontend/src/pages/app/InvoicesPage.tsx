@@ -118,10 +118,30 @@ function InvoiceDetailModal({ invoiceId, lang, onClose }: { invoiceId: string; l
                 <span className="text-gray-600">{t('subtotal', lang)}</span>
                 <span>${Number(invoice.subtotal).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">{t('tax', lang)}</span>
-                <span>${Number(invoice.taxAmount).toFixed(2)}</span>
-              </div>
+              {invoice.taxBreakdown ? (
+                invoice.taxType === 'GST_QST' ? (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">{t('gst', lang)}</span>
+                      <span>${Number(invoice.taxBreakdown.gst ?? 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">{t('qst', lang)}</span>
+                      <span>${Number(invoice.taxBreakdown.qst ?? 0).toFixed(2)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">{t('hst', lang)}</span>
+                    <span>${Number(invoice.taxBreakdown.hst ?? 0).toFixed(2)}</span>
+                  </div>
+                )
+              ) : (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">{t('tax', lang)}</span>
+                  <span>${Number(invoice.taxAmount).toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-base font-bold border-t pt-2">
                 <span>{t('total', lang)}</span>
                 <span>${Number(invoice.total).toFixed(2)}</span>
@@ -217,7 +237,20 @@ export function InvoicesPage() {
                   <td className="px-4 py-3 text-sm font-mono">{inv.invoiceNo}</td>
                   <td className="px-4 py-3 text-sm font-medium">{inv.customer?.name}</td>
                   <td className="px-4 py-3 text-sm">${inv.subtotal}</td>
-                  <td className="px-4 py-3 text-sm">${inv.taxAmount}</td>
+                  <td className="px-4 py-3 text-sm">
+                    {inv.taxBreakdown ? (
+                      inv.taxType === 'GST_QST' ? (
+                        <div className="space-y-0.5">
+                          <div className="text-xs text-gray-500">{t('gst', lang)}: ${Number(inv.taxBreakdown.gst ?? 0).toFixed(2)}</div>
+                          <div className="text-xs text-gray-500">{t('qst', lang)}: ${Number(inv.taxBreakdown.qst ?? 0).toFixed(2)}</div>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-500">{t('hst', lang)}: ${Number(inv.taxBreakdown.hst ?? 0).toFixed(2)}</div>
+                      )
+                    ) : (
+                      <span>${inv.taxAmount}</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-sm font-bold">${inv.total}</td>
                   <td className="px-4 py-3 text-sm text-gray-500">{formatDateTz(inv.dueDate, 'MMM d, yyyy')}</td>
                   <td className="px-4 py-3">

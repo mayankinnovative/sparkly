@@ -73,6 +73,8 @@ export interface Invoice {
   subtotal: number;
   taxAmount: number;
   total: number;
+  taxType?: 'GST_QST' | 'HST';
+  taxBreakdown?: { gst?: number; qst?: number; hst?: number } | null;
   dueDate: string;
   status: InvoiceStatus;
   issuedDate?: string;

@@ -66,8 +66,16 @@ export class InvoicesService {
 
     const subtotal = jobs.reduce((sum: number, j) => sum + j.price.toNumber(), 0);
     const rates = TAX_RATES[input.taxType];
-    const taxAmount = Math.round(subtotal * (rates.gst + rates.qst + rates.hst) * 100) / 100;
+    const gstAmount = Math.round(subtotal * rates.gst * 100) / 100;
+    const qstAmount = Math.round(subtotal * rates.qst * 100) / 100;
+    const hstAmount = Math.round(subtotal * rates.hst * 100) / 100;
+    const taxAmount = Math.round((gstAmount + qstAmount + hstAmount) * 100) / 100;
     const total = Math.round((subtotal + taxAmount) * 100) / 100;
+
+    // Build tax breakdown based on tax type
+    const taxBreakdown = input.taxType === 'GST_QST'
+      ? { gst: gstAmount, qst: qstAmount }
+      : { hst: hstAmount };
 
     // Build line items from jobs
     const lineItems = jobs.map((j) => ({
@@ -86,6 +94,8 @@ export class InvoicesService {
         subtotal,
         taxAmount,
         total,
+        taxType: input.taxType,
+        taxBreakdown,
         issuedDate: todayInTimezone(timezone || 'UTC'),
         dueDate: new Date(input.dueDate),
         language: input.language ?? 'en',

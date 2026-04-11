@@ -286,15 +286,17 @@ model Invoice {
   accountId  String        @map("account_id") @db.Uuid
   customerId String        @map("customer_id") @db.Uuid
   lineItems  Json          @map("line_items")
-  subtotal   Decimal       @db.Decimal(12, 2)
-  taxAmount  Decimal       @map("tax_amount") @db.Decimal(12, 2)
-  total      Decimal       @db.Decimal(12, 2)
-  status     InvoiceStatus @default(draft)
-  invoiceNo  String        @map("invoice_no") @db.VarChar(50)
-  issuedDate DateTime      @map("issued_date") @db.Date
-  dueDate    DateTime      @map("due_date") @db.Date
-  language   String        @default("en") @db.VarChar(5)
-  notes      String?       @db.Text
+  subtotal     Decimal       @db.Decimal(12, 2)
+  taxAmount    Decimal       @map("tax_amount") @db.Decimal(12, 2)
+  total        Decimal       @db.Decimal(12, 2)
+  taxType      String        @default("GST_QST") @map("tax_type") @db.VarChar(10)
+  taxBreakdown Json?         @map("tax_breakdown")
+  status       InvoiceStatus @default(draft)
+  invoiceNo    String        @map("invoice_no") @db.VarChar(50)
+  issuedDate   DateTime      @map("issued_date") @db.Date
+  dueDate      DateTime      @map("due_date") @db.Date
+  language     String        @default("en") @db.VarChar(5)
+  notes        String?       @db.Text
   createdAt  DateTime      @default(now()) @map("created_at")
   updatedAt  DateTime      @updatedAt @map("updated_at")
 
