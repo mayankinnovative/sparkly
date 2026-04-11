@@ -51,12 +51,12 @@ export function PaymentLinksPage() {
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-3 mb-1">
-                    <span className="font-mono text-sm font-medium">{inv.invoiceNumber}</span>
+                    <span className="font-mono text-sm font-medium">{inv.invoiceNo}</span>
                     <Badge variant={inv.paymentLink?.status === 'paid' ? 'success' : inv.paymentLink?.status === 'expired' ? 'destructive' : 'info'}>
                       {inv.paymentLink?.status}
                     </Badge>
                   </div>
-                  <p className="text-sm text-gray-500">{inv.customer?.name} — ${inv.totalAmount}</p>
+                  <p className="text-sm text-gray-500">{inv.customer?.name} — ${inv.total}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {inv.paymentLink?.url && (

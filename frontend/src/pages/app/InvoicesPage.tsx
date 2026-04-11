@@ -17,11 +17,7 @@ const statusVariant: Record<string, 'info' | 'warning' | 'success' | 'destructiv
   cancelled: 'destructive',
 };
 
-interface InvoiceDetail extends Invoice {
-  lineItems?: { description: string; qty: number; rate: number; amount: number }[];
-  issuedDate?: string;
-  notes?: string | null;
-}
+type InvoiceDetail = Invoice;
 
 function InvoiceDetailModal({ invoiceId, lang, onClose }: { invoiceId: string; lang: Language; onClose: () => void }) {
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
@@ -61,7 +57,7 @@ function InvoiceDetailModal({ invoiceId, lang, onClose }: { invoiceId: string; l
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-gray-500 uppercase">{t('invoiceNumber', lang)}</p>
-                <p className="font-mono font-semibold">{invoice.invoiceNumber}</p>
+                <p className="font-mono font-semibold">{invoice.invoiceNo}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 uppercase">{t('status', lang)}</p>
@@ -124,11 +120,11 @@ function InvoiceDetailModal({ invoiceId, lang, onClose }: { invoiceId: string; l
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">{t('tax', lang)}</span>
-                <span>${Number(invoice.totalTax).toFixed(2)}</span>
+                <span>${Number(invoice.taxAmount).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-base font-bold border-t pt-2">
                 <span>{t('total', lang)}</span>
-                <span>${Number(invoice.totalAmount).toFixed(2)}</span>
+                <span>${Number(invoice.total).toFixed(2)}</span>
               </div>
             </div>
 
@@ -218,11 +214,11 @@ export function InvoicesPage() {
             <tbody className="divide-y">
               {invoices.map((inv) => (
                 <tr key={inv.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm font-mono">{inv.invoiceNumber}</td>
+                  <td className="px-4 py-3 text-sm font-mono">{inv.invoiceNo}</td>
                   <td className="px-4 py-3 text-sm font-medium">{inv.customer?.name}</td>
                   <td className="px-4 py-3 text-sm">${inv.subtotal}</td>
-                  <td className="px-4 py-3 text-sm">${inv.totalTax}</td>
-                  <td className="px-4 py-3 text-sm font-bold">${inv.totalAmount}</td>
+                  <td className="px-4 py-3 text-sm">${inv.taxAmount}</td>
+                  <td className="px-4 py-3 text-sm font-bold">${inv.total}</td>
                   <td className="px-4 py-3 text-sm text-gray-500">{formatDateTz(inv.dueDate, 'MMM d, yyyy')}</td>
                   <td className="px-4 py-3">
                     <Badge variant={statusVariant[inv.status] || 'secondary'} className="capitalize">

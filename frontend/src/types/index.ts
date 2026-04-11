@@ -68,18 +68,17 @@ export interface RecurringJob {
 
 export interface Invoice {
   id: string;
-  invoiceNumber: string;
+  invoiceNo: string;
   customerId: string;
   subtotal: number;
-  gst: number;
-  qst: number;
-  hst: number;
-  totalTax: number;
-  totalAmount: number;
+  taxAmount: number;
+  total: number;
   dueDate: string;
   status: InvoiceStatus;
-  taxType: 'GST_QST' | 'HST';
+  issuedDate?: string;
   language: Language;
+  notes?: string | null;
+  lineItems?: { description: string; qty: number; rate: number; amount: number }[];
   customer?: Customer;
   paymentLink?: PaymentLink | null;
 }
