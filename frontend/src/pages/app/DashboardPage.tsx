@@ -104,14 +104,14 @@ export function DashboardPage() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <CalendarClock className="h-5 w-5 text-blue-600" />
-                  <h3 className="font-semibold text-blue-900">Recurring Revenue</h3>
+                  <h3 className="font-semibold text-blue-900">{t('recurringRevenue', lang)}</h3>
                 </div>
-                <p className="text-3xl font-bold text-blue-700">${recurringSummary.monthlyRecurringRevenue.toLocaleString()}<span className="text-sm font-normal text-blue-500">/month</span></p>
+                <p className="text-3xl font-bold text-blue-700">${recurringSummary.monthlyRecurringRevenue.toLocaleString()}<span className="text-sm font-normal text-blue-500">{t('perMonth', lang)}</span></p>
                 <p className="text-sm text-blue-500 mt-1">{recurringSummary.activeCount} active recurring job{recurringSummary.activeCount !== 1 ? 's' : ''}</p>
               </div>
               {recurringSummary.upcomingJobs.length > 0 && (
                 <div className="text-right">
-                  <p className="text-xs font-medium text-blue-500 uppercase mb-2">Next Upcoming</p>
+                  <p className="text-xs font-medium text-blue-500 uppercase mb-2">{t('nextUpcoming', lang)}</p>
                   <div className="space-y-1.5">
                     {recurringSummary.upcomingJobs.map((job) => (
                       <div key={job.id} className="text-sm">
@@ -146,7 +146,7 @@ export function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <Tooltip formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']} />
+                  <Tooltip formatter={(value: number) => [`$${value.toLocaleString()}`, t('revenue', lang)]} />
                   <Bar dataKey="revenue" fill="#2563EB" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -189,21 +189,21 @@ export function DashboardPage() {
             <CardContent className="p-6 text-center">
               <Briefcase className="h-8 w-8 mx-auto text-blue-600 mb-2" />
               <p className="text-3xl font-bold">{overview.completedJobs}/{overview.jobCount}</p>
-              <p className="text-sm text-muted-foreground">Jobs Completed</p>
+              <p className="text-sm text-muted-foreground">{t('jobsCompleted', lang)}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-6 text-center">
               <DollarSign className="h-8 w-8 mx-auto text-green-600 mb-2" />
               <p className="text-3xl font-bold">${overview.totalPaid.toLocaleString()}</p>
-              <p className="text-sm text-muted-foreground">Invoices Paid</p>
+              <p className="text-sm text-muted-foreground">{t('invoicesPaid', lang)}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-6 text-center">
               <TrendingDown className="h-8 w-8 mx-auto text-amber-600 mb-2" />
               <p className="text-3xl font-bold">${overview.totalOutstanding.toLocaleString()}</p>
-              <p className="text-sm text-muted-foreground">Outstanding</p>
+              <p className="text-sm text-muted-foreground">{t('outstanding', lang)}</p>
             </CardContent>
           </Card>
         </div>

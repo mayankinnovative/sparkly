@@ -55,7 +55,7 @@ export function LogJobPage() {
         <CardContent className="p-6">
           {success && (
             <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-lg flex items-center gap-2 border border-green-200">
-              <CheckCircle2 className="h-5 w-5" /> Job logged successfully!
+              <CheckCircle2 className="h-5 w-5" /> {t('jobLoggedSuccess', lang)}
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -67,14 +67,14 @@ export function LogJobPage() {
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 required
               >
-                <option value="">Select customer...</option>
+                <option value="">{t('selectCustomer', lang)}</option>
                 {customers.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
-              <Label>Title *</Label>
+              <Label>{t('title', lang)} *</Label>
               <Input
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -88,7 +88,7 @@ export function LogJobPage() {
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[60px]"
-                placeholder="Optional details..."
+                placeholder={t('optionalDetails', lang)}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -115,12 +115,12 @@ export function LogJobPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Notes</Label>
+              <Label>{t('notes', lang)}</Label>
               <textarea
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
                 className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px]"
-                placeholder="Optional notes..."
+                placeholder={t('optionalNotes', lang)}
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>

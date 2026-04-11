@@ -41,7 +41,7 @@ export function PaymentLinksPage() {
         <Card>
           <CardContent className="p-12 text-center text-gray-500">
             <Link2 className="h-10 w-10 mx-auto mb-3 text-gray-300" />
-            <p>No payment links yet. Create one from the Invoices page.</p>
+            <p>{t('noPaymentLinks', lang)}</p>
           </CardContent>
         </Card>
       ) : (
@@ -67,11 +67,11 @@ export function PaymentLinksPage() {
                         onClick={() => copyLink(inv.paymentLink!.url, inv.id)}
                       >
                         {copied === inv.id ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                        {copied === inv.id ? 'Copied' : 'Copy'}
+                        {copied === inv.id ? t('copied', lang) : t('copy', lang)}
                       </Button>
                       <a href={inv.paymentLink.url} target="_blank" rel="noopener noreferrer">
                         <Button size="sm" variant="ghost">
-                          <ExternalLink className="h-4 w-4" /> Open
+                          <ExternalLink className="h-4 w-4" /> {t('open', lang)}
                         </Button>
                       </a>
                     </>

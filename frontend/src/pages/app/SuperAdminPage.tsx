@@ -6,6 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import api from '@/lib/api';
+import { useAuthStore } from '@/store/auth';
+import { t } from '@/lib/i18n';
+import type { Language } from '@/types';
 import { formatDateTz } from '@/lib/timezone';
 import {
   LayoutDashboard, Users, CreditCard, Settings, Activity,
@@ -15,20 +18,22 @@ import {
 
 type TabKey = 'dashboard' | 'users' | 'payments' | 'settings' | 'logs';
 
-const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
-  { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { key: 'users', label: 'Users / Tenants', icon: Users },
-  { key: 'payments', label: 'Payments', icon: CreditCard },
-  { key: 'settings', label: 'Settings & Promos', icon: Settings },
-  { key: 'logs', label: 'System Logs', icon: Activity },
-];
-
 export function SuperAdminPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
+  const { language } = useAuthStore();
+  const lang = language as Language;
+
+  const tabs: { key: TabKey; label: string; icon: React.ElementType }[] = [
+    { key: 'dashboard', label: t('dashboard', lang), icon: LayoutDashboard },
+    { key: 'users', label: t('usersAndTenants', lang), icon: Users },
+    { key: 'payments', label: t('payments', lang), icon: CreditCard },
+    { key: 'settings', label: t('settingsAndPromos', lang), icon: Settings },
+    { key: 'logs', label: t('systemLogs', lang), icon: Activity },
+  ];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Super Admin Panel</h1>
+      <h1 className="text-2xl font-bold">{t('superAdminPanel', lang)}</h1>
 
       {/* Tab Navigation */}
       <div className="flex gap-1 border-b">
@@ -66,6 +71,8 @@ function KpiDashboard() {
   const [stats, setStats] = useState<any>(null);
   const [kpi, setKpi] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const { language } = useAuthStore();
+  const lang = language as Language;
 
   useEffect(() => {
     Promise.all([
@@ -83,12 +90,12 @@ function KpiDashboard() {
   if (loading) return <LoadingState />;
 
   const cards = [
-    { label: 'Total Users', value: kpi?.totalUsers || stats?.userCount || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Total Accounts', value: kpi?.totalAccounts || stats?.accountCount || 0, icon: LayoutDashboard, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: t('totalUsers', lang), value: kpi?.totalUsers || stats?.userCount || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: t('totalAccounts', lang), value: kpi?.totalAccounts || stats?.accountCount || 0, icon: LayoutDashboard, color: 'text-purple-600', bg: 'bg-purple-50' },
     { label: 'MRR', value: `$${(kpi?.mrr || 0).toLocaleString()}`, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { label: 'Churn Rate', value: `${kpi?.churnRate || 0}%`, icon: TrendingDown, color: 'text-red-500', bg: 'bg-red-50' },
-    { label: 'Active Subs', value: kpi?.activeSubs || 0, icon: BarChart3, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Total Revenue', value: `$${(stats?.totalPaidRevenue || 0).toLocaleString()}`, icon: CreditCard, color: 'text-green-600', bg: 'bg-green-50' },
+    { label: t('activeSubs', lang), value: kpi?.activeSubs || 0, icon: BarChart3, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: t('totalRevenueAdmin', lang), value: `$${(stats?.totalPaidRevenue || 0).toLocaleString()}`, icon: CreditCard, color: 'text-green-600', bg: 'bg-green-50' },
   ];
 
   return (
@@ -116,19 +123,19 @@ function KpiDashboard() {
         <Card>
           <CardContent className="p-6 text-center">
             <p className="text-3xl font-bold">{stats?.jobCount || 0}</p>
-            <p className="text-sm text-muted-foreground">Total Jobs</p>
+            <p className="text-sm text-muted-foreground">{t('totalJobs', lang)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6 text-center">
             <p className="text-3xl font-bold">{stats?.invoiceCount || 0}</p>
-            <p className="text-sm text-muted-foreground">Total Invoices</p>
+            <p className="text-sm text-muted-foreground">{t('totalInvoices', lang)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-6 text-center">
             <p className="text-3xl font-bold text-red-500">{kpi?.recentCancelled || 0}</p>
-            <p className="text-sm text-muted-foreground">Cancelled (30d)</p>
+            <p className="text-sm text-muted-foreground">{t('cancelled', lang)} (30d)</p>
           </CardContent>
         </Card>
       </div>

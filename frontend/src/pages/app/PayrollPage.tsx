@@ -53,7 +53,7 @@ export function PayrollPage() {
       <div className="flex flex-col items-center justify-center h-64 gap-4">
         <Lock className="h-12 w-12 text-gray-300" />
         <h2 className="text-xl font-semibold text-gray-600">{t('upgradeRequired', lang)}</h2>
-        <p className="text-gray-500">Payroll requires the Business plan.</p>
+        <p className="text-gray-500">{t('payrollRequiresBusiness', lang)}</p>
         <Button>{t('upgradePlan', lang)}</Button>
       </div>
     );
@@ -133,14 +133,14 @@ export function PayrollPage() {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('employee', lang)}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('grossPay', lang)}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('federalTax', lang)}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('provincialTax', lang)}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('cppQpp', lang)}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('ei', lang)}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('netPay', lang)}</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Province</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('province', lang)}</th>
               </tr>
             </thead>
             <tbody className="divide-y">

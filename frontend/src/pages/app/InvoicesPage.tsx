@@ -68,7 +68,7 @@ export function InvoicesPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('total', lang)}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('dueDate', lang)}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('status', lang)}</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('payment', lang)}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -88,11 +88,11 @@ export function InvoicesPage() {
                   <td className="px-4 py-3">
                     {inv.paymentLink?.url ? (
                       <a href={inv.paymentLink.url} target="_blank" rel="noopener noreferrer" className="text-sparkly-blue hover:underline flex items-center gap-1 text-sm">
-                        <ExternalLink className="h-3 w-3" /> Pay
+                        <ExternalLink className="h-3 w-3" /> {t('pay', lang)}
                       </a>
                     ) : inv.status !== 'paid' && inv.status !== 'cancelled' ? (
                       <Button size="sm" variant="outline" onClick={() => createPaymentLink(inv.id)}>
-                        Create Link
+                        {t('createLink', lang)}
                       </Button>
                     ) : null}
                   </td>

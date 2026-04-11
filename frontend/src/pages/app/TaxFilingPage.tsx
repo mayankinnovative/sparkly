@@ -64,7 +64,7 @@ export function TaxFilingPage() {
             </Card>
             <Card>
               <CardContent className="p-6 text-center">
-                <p className="text-sm text-muted-foreground">Invoices</p>
+                <p className="text-sm text-muted-foreground">{t('invoices', lang)}</p>
                 <p className="text-3xl font-bold">{summary.invoiceCount}</p>
               </CardContent>
             </Card>
@@ -74,7 +74,7 @@ export function TaxFilingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calculator className="h-5 w-5" />
-                Tax Breakdown ({province === 'QC' ? 'GST + QST' : 'HST'})
+                {t('taxBreakdown', lang)} ({province === 'QC' ? 'GST + QST' : 'HST'})
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -84,14 +84,14 @@ export function TaxFilingPage() {
                     <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium">{t('gst', lang)}</p>
-                        <p className="text-sm text-gray-500">Federal goods and services tax</p>
+                        <p className="text-sm text-gray-500">{t('gstDescription', lang)}</p>
                       </div>
                       <p className="text-xl font-bold">${estimatedGst.toLocaleString()}</p>
                     </div>
                     <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium">{t('qst', lang)}</p>
-                        <p className="text-sm text-gray-500">Quebec sales tax</p>
+                        <p className="text-sm text-gray-500">{t('qstDescription', lang)}</p>
                       </div>
                       <p className="text-xl font-bold">${estimatedQst.toLocaleString()}</p>
                     </div>
@@ -100,13 +100,13 @@ export function TaxFilingPage() {
                   <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                     <div>
                       <p className="font-medium">{t('hst', lang)}</p>
-                      <p className="text-sm text-gray-500">Harmonized sales tax</p>
+                        <p className="text-sm text-gray-500">{t('hstDescription', lang)}</p>
                     </div>
                     <p className="text-xl font-bold">${estimatedHst.toLocaleString()}</p>
                   </div>
                 )}
                 <div className="border-t pt-4 flex justify-between items-center font-bold text-lg">
-                  <span>Total Tax Collected</span>
+                  <span>{t('totalTaxCollected', lang)}</span>
                   <span className="text-sparkly-blue">${summary.totalTax.toLocaleString()}</span>
                 </div>
               </div>

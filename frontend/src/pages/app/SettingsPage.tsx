@@ -26,9 +26,9 @@ export function SettingsPage() {
     try {
       const { data } = await api.patch('/users/me', { fullName });
       if (user) setUser({ ...user, fullName });
-      setMessage(lang === 'en' ? 'Profile updated successfully' : 'Profil mis à jour');
+      setMessage(t('profileUpdated', lang));
     } catch {
-      setMessage(lang === 'en' ? 'Failed to update profile' : 'Échec de la mise à jour');
+      setMessage(t('profileUpdateFailed', lang));
     } finally {
       setSaving(false);
     }
@@ -43,34 +43,34 @@ export function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            {lang === 'en' ? 'Profile' : 'Profil'}
+            {t('profile', lang)}
           </CardTitle>
           <CardDescription>
-            {lang === 'en' ? 'Manage your personal information' : 'Gérez vos informations personnelles'}
+            {t('managePersonalInfo', lang)}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSaveProfile} className="space-y-4">
             <div>
-              <Label>{lang === 'en' ? 'Full Name' : 'Nom complet'}</Label>
+              <Label>{t('fullName', lang)}</Label>
               <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
             </div>
             <div>
-              <Label>Email</Label>
+              <Label>{t('email', lang)}</Label>
               <Input value={email} disabled className="bg-gray-50" />
             </div>
             <div>
-              <Label>Username</Label>
+              <Label>{t('username', lang)}</Label>
               <Input value={user?.username ?? ''} disabled className="bg-gray-50" />
             </div>
             <div>
-              <Label>Role</Label>
+              <Label>{t('role', lang)}</Label>
               <Input value={user?.role ?? ''} disabled className="bg-gray-50 capitalize" />
             </div>
             {message && <p className="text-sm text-sparkly-green">{message}</p>}
             <Button type="submit" disabled={saving}>
               <Save className="h-4 w-4 mr-2" />
-              {saving ? '...' : lang === 'en' ? 'Save' : 'Sauvegarder'}
+              {saving ? '...' : t('save', lang)}
             </Button>
           </form>
         </CardContent>
@@ -81,16 +81,16 @@ export function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            {lang === 'en' ? 'Business Information' : "Informations de l'entreprise"}
+            {t('businessInfo', lang)}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>{lang === 'en' ? 'Business Name' : "Nom de l'entreprise"}</Label>
+            <Label>{t('businessName', lang)}</Label>
             <Input value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
           </div>
           <div>
-            <Label>{lang === 'en' ? 'Plan' : 'Forfait'}</Label>
+            <Label>{t('plan', lang)}</Label>
             <Input value={account?.plan ?? ''} disabled className="bg-gray-50 capitalize" />
           </div>
         </CardContent>
@@ -101,12 +101,12 @@ export function SettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5" />
-            {lang === 'en' ? 'Region Settings' : 'Paramètres régionaux'}
+            {t('regionSettings', lang)}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>{lang === 'en' ? 'Province (affects tax calculations)' : 'Province (affecte les calculs de taxe)'}</Label>
+            <Label>{t('provinceTaxInfo', lang)}</Label>
             <div className="flex gap-2 mt-2">
               <Button
                 variant={province === 'QC' ? 'default' : 'outline'}

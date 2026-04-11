@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/store/auth';
-import { t } from '@/lib/i18n';
+import { t, type TranslationKey } from '@/lib/i18n';
 import api from '@/lib/api';
 import { nowLocalInput } from '@/lib/timezone';
 import type { Language } from '@/types';
@@ -14,6 +14,19 @@ const CATEGORIES = [
   'supplies', 'equipment', 'fuel', 'wages', 'insurance',
   'marketing', 'storage', 'training', 'software', 'other',
 ];
+
+const CATEGORY_KEYS: Record<string, TranslationKey> = {
+  supplies: 'catSupplies',
+  equipment: 'catEquipment',
+  fuel: 'catFuel',
+  wages: 'catWages',
+  insurance: 'catInsurance',
+  marketing: 'catMarketing',
+  storage: 'catStorage',
+  training: 'catTraining',
+  software: 'catSoftware',
+  other: 'catOther',
+};
 
 export function LogExpensePage() {
   const { language } = useAuthStore();
@@ -53,19 +66,19 @@ export function LogExpensePage() {
         <CardContent className="p-6">
           {success && (
             <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-lg flex items-center gap-2 border border-green-200">
-              <CheckCircle2 className="h-5 w-5" /> Expense logged successfully!
+              <CheckCircle2 className="h-5 w-5" /> {t('expenseLoggedSuccess', lang)}
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label>Category</Label>
+              <Label>{t('category', lang)}</Label>
               <select
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c.replace(/_/g, ' ').replace(/^\w/, (l) => l.toUpperCase())}</option>
+                  <option key={c} value={c}>{t(CATEGORY_KEYS[c], lang)}</option>
                 ))}
               </select>
             </div>
@@ -79,7 +92,7 @@ export function LogExpensePage() {
                 <Input type="number" step="0.01" min="0" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
               </div>
               <div className="space-y-2">
-                <Label>Date</Label>
+                <Label>{t('date', lang)}</Label>
                 <Input type="datetime-local" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
               </div>
             </div>

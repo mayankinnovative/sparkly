@@ -140,7 +140,7 @@ export function RecurringJobsPage() {
       <div className="flex flex-col items-center justify-center h-64 gap-4">
         <Lock className="h-12 w-12 text-gray-300" />
         <h2 className="text-xl font-semibold text-gray-600">{t('upgradeRequired', lang)}</h2>
-        <p className="text-gray-500">Recurring Jobs require the Pro plan or higher.</p>
+        <p className="text-gray-500">{t('recurringJobsRequirePro', lang)}</p>
         <Button>{t('upgradePlan', lang)}</Button>
       </div>
     );
@@ -162,7 +162,7 @@ export function RecurringJobsPage() {
       {showForm && !editingJob && (
         <Card>
           <CardContent className="p-6">
-            <h2 className="text-lg font-semibold mb-4">{t('create', lang)} Recurring Job</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('createRecurringJob', lang)}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -173,14 +173,14 @@ export function RecurringJobsPage() {
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     required
                   >
-                    <option value="">Select customer...</option>
+                    <option value="">{t('selectCustomer', lang)}</option>
                     {customers.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Title *</Label>
+                  <Label>{t('title', lang)} *</Label>
                   <Input
                     value={form.title}
                     onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -189,16 +189,16 @@ export function RecurringJobsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Frequency *</Label>
+                  <Label>{t('frequency', lang)} *</Label>
                   <select
                     value={form.frequency}
                     onChange={(e) => setForm({ ...form, frequency: e.target.value as any })}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     required
                   >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
+                    <option value="daily">{t('daily', lang)}</option>
+                    <option value="weekly">{t('weekly', lang)}</option>
+                    <option value="monthly">{t('monthly', lang)}</option>
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -214,7 +214,7 @@ export function RecurringJobsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>First Run Date *</Label>
+                  <Label>{t('firstRunDate', lang)} *</Label>
                   <Input
                     type="datetime-local"
                     value={form.nextRun}
@@ -228,7 +228,7 @@ export function RecurringJobsPage() {
                   <Input
                     value={form.description}
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    placeholder="Optional details..."
+                    placeholder={t('optionalDetails', lang)}
                   />
                 </div>
               </div>
@@ -246,7 +246,7 @@ export function RecurringJobsPage() {
         <Card className="border-blue-200 bg-blue-50/30">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">{t('edit', lang)} Recurring Job</h2>
+              <h2 className="text-lg font-semibold">{t('editRecurringJob', lang)}</h2>
               <Button size="sm" variant="ghost" onClick={() => setEditingJob(null)}><X className="h-4 w-4" /></Button>
             </div>
             <form onSubmit={handleEditSubmit} className="space-y-4">
@@ -259,27 +259,27 @@ export function RecurringJobsPage() {
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     required
                   >
-                    <option value="">Select customer...</option>
+                    <option value="">{t('selectCustomer', lang)}</option>
                     {customers.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Title *</Label>
+                  <Label>{t('title', lang)} *</Label>
                   <Input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} required />
                 </div>
                 <div className="space-y-2">
-                  <Label>Frequency *</Label>
+                  <Label>{t('frequency', lang)} *</Label>
                   <select
                     value={editForm.frequency}
                     onChange={(e) => setEditForm({ ...editForm, frequency: e.target.value as any })}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     required
                   >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
+                    <option value="daily">{t('daily', lang)}</option>
+                    <option value="weekly">{t('weekly', lang)}</option>
+                    <option value="monthly">{t('monthly', lang)}</option>
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -294,7 +294,7 @@ export function RecurringJobsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Next Run Date *</Label>
+                  <Label>{t('nextRunDate', lang)} *</Label>
                   <Input
                     type="datetime-local"
                     value={editForm.nextRun}
@@ -308,7 +308,7 @@ export function RecurringJobsPage() {
                   <Input
                     value={editForm.description}
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                    placeholder="Optional details..."
+                    placeholder={t('optionalDetails', lang)}
                   />
                 </div>
               </div>
@@ -344,11 +344,11 @@ export function RecurringJobsPage() {
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('customer', lang)}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('jobDescription', lang)}</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Frequency</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('frequency', lang)}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('amount', lang)}</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Next Run</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('nextRun', lang)}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('status', lang)}</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('actions', lang)}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -373,7 +373,7 @@ export function RecurringJobsPage() {
                         disabled={togglingId === rj.id}
                       >
                         {togglingId === rj.id && <Loader2 className="h-3 w-3 animate-spin" />}
-                        {rj.status === 'active' ? 'Pause' : 'Resume'}
+                        {rj.status === 'active' ? t('pause', lang) : t('resume', lang)}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => handleEdit(rj)}>
                         <Pencil className="h-3 w-3" />
@@ -391,15 +391,15 @@ export function RecurringJobsPage() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">
-              Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, jobs.length)} of {jobs.length}
+              {t('showing', lang)} {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, jobs.length)} {t('of', lang)} {jobs.length}
             </p>
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                <ChevronLeft className="h-4 w-4" /> Previous
+                <ChevronLeft className="h-4 w-4" /> {t('previous', lang)}
               </Button>
-              <span className="text-sm font-medium">Page {page} of {totalPages}</span>
+              <span className="text-sm font-medium">{t('page', lang)} {page} {t('of', lang)} {totalPages}</span>
               <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-                Next <ChevronRight className="h-4 w-4" />
+                {t('next', lang)} <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>

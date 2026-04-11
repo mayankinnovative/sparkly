@@ -143,7 +143,7 @@ export function AllJobsPage() {
         <Card className="border-blue-200 bg-blue-50/30">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">{t('edit', lang)} Job</h2>
+              <h2 className="text-lg font-semibold">{t('editJob', lang)}</h2>
               <Button size="sm" variant="ghost" onClick={() => setEditingJob(null)}><X className="h-4 w-4" /></Button>
             </div>
             <form onSubmit={handleEditSubmit} className="space-y-4">
@@ -156,14 +156,14 @@ export function AllJobsPage() {
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     required
                   >
-                    <option value="">Select customer...</option>
+                    <option value="">{t('selectCustomer', lang)}</option>
                     {customers.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Title *</Label>
+                  <Label>{t('title', lang)} *</Label>
                   <Input value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} required />
                 </div>
                 <div className="space-y-2">
@@ -204,15 +204,15 @@ export function AllJobsPage() {
                   <Input
                     value={editForm.description}
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                    placeholder="Optional"
+                    placeholder={t('optional', lang)}
                   />
                 </div>
                 <div className="space-y-2 col-span-2">
-                  <Label>Notes</Label>
+                  <Label>{t('notes', lang)}</Label>
                   <textarea
                     value={editForm.notes}
                     onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                    placeholder="Optional notes..."
+                    placeholder={t('optionalNotes', lang)}
                     className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px] resize-y"
                   />
                 </div>
@@ -244,7 +244,7 @@ export function AllJobsPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('scheduledDate', lang)}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('amount', lang)}</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('status', lang)}</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('actions', lang)}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -269,7 +269,7 @@ export function AllJobsPage() {
                       <div className="flex gap-1">
                         {job.status !== 'completed' && job.status !== 'cancelled' && (
                           <Button size="sm" variant="outline" onClick={() => markComplete(job.id)}>
-                            Complete
+                            {t('complete', lang)}
                           </Button>
                         )}
                         <Button size="sm" variant="ghost" onClick={() => handleEdit(job)}>
@@ -290,15 +290,15 @@ export function AllJobsPage() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">
-              Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of {filtered.length}
+              {t('showing', lang)} {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} {t('of', lang)} {filtered.length}
             </p>
             <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                <ChevronLeft className="h-4 w-4" /> Previous
+                <ChevronLeft className="h-4 w-4" /> {t('previous', lang)}
               </Button>
-              <span className="text-sm font-medium">Page {page} of {totalPages}</span>
+              <span className="text-sm font-medium">{t('page', lang)} {page} {t('of', lang)} {totalPages}</span>
               <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-                Next <ChevronRight className="h-4 w-4" />
+                {t('next', lang)} <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
