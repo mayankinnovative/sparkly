@@ -24,7 +24,7 @@ export function SettingsPage() {
     setSaving(true);
     setMessage('');
     try {
-      const { data } = await api.patch('/users/me', { fullName });
+      await api.patch('/users/me', { fullName });
       if (user) setUser({ ...user, fullName });
       setMessage(t('profileUpdated', lang));
     } catch {
