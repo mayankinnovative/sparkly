@@ -66,6 +66,12 @@ export interface RecurringJob {
   customer?: { id: string; name: string };
 }
 
+export interface TaxBreakdown {
+  gst?: number;
+  qst?: number;
+  hst?: number;
+}
+
 export interface Invoice {
   id: string;
   invoiceNo: string;
@@ -74,7 +80,7 @@ export interface Invoice {
   taxAmount: number;
   total: number;
   taxType?: 'GST_QST' | 'HST';
-  taxBreakdown?: { gst?: number; qst?: number; hst?: number } | null;
+  taxBreakdown?: TaxBreakdown | null;
   dueDate: string;
   status: InvoiceStatus;
   issuedDate?: string;

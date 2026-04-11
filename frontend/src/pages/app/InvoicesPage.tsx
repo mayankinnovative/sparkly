@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth';
 import { t } from '@/lib/i18n';
 import api from '@/lib/api';
-import type { Invoice, Language } from '@/types';
+import type { Invoice, Language, TaxBreakdown } from '@/types';
 import { formatDateTz } from '@/lib/timezone';
 import { FileText, ExternalLink, Eye, X } from 'lucide-react';
 
@@ -16,6 +16,36 @@ const statusVariant: Record<string, 'info' | 'warning' | 'success' | 'destructiv
   overdue: 'warning',
   cancelled: 'destructive',
 };
+
+// Tax rates for computing breakdown when not stored in DB
+const TAX_RATES = {
+  GST_QST: { gst: 0.05, qst: 0.09975 },
+  HST: { hst: 0.13 },
+};
+
+function getTaxBreakdown(inv: Invoice): { type: 'GST_QST' | 'HST'; breakdown: TaxBreakdown } {
+  // Use stored breakdown if available
+  if (inv.taxBreakdown && inv.taxType) {
+    return { type: inv.taxType, breakdown: inv.taxBreakdown };
+  }
+
+  // Determine tax type from taxType field or customer type
+  const taxType: 'GST_QST' | 'HST' =
+    inv.taxType || (inv.customer?.customerType === 'ON' ? 'HST' : 'GST_QST');
+
+  // Compute breakdown from subtotal
+  const subtotal = Number(inv.subtotal);
+  if (taxType === 'HST') {
+    return { type: 'HST', breakdown: { hst: Math.round(subtotal * TAX_RATES.HST.hst * 100) / 100 } };
+  }
+  return {
+    type: 'GST_QST',
+    breakdown: {
+      gst: Math.round(subtotal * TAX_RATES.GST_QST.gst * 100) / 100,
+      qst: Math.round(subtotal * TAX_RATES.GST_QST.qst * 100) / 100,
+    },
+  };
+}
 
 type InvoiceDetail = Invoice;
 
@@ -118,30 +148,26 @@ function InvoiceDetailModal({ invoiceId, lang, onClose }: { invoiceId: string; l
                 <span className="text-gray-600">{t('subtotal', lang)}</span>
                 <span>${Number(invoice.subtotal).toFixed(2)}</span>
               </div>
-              {invoice.taxBreakdown ? (
-                invoice.taxType === 'GST_QST' ? (
+              {(() => {
+                const { type, breakdown } = getTaxBreakdown(invoice);
+                return type === 'GST_QST' ? (
                   <>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">{t('gst', lang)}</span>
-                      <span>${Number(invoice.taxBreakdown.gst ?? 0).toFixed(2)}</span>
+                      <span>${Number(breakdown.gst ?? 0).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">{t('qst', lang)}</span>
-                      <span>${Number(invoice.taxBreakdown.qst ?? 0).toFixed(2)}</span>
+                      <span>${Number(breakdown.qst ?? 0).toFixed(2)}</span>
                     </div>
                   </>
                 ) : (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">{t('hst', lang)}</span>
-                    <span>${Number(invoice.taxBreakdown.hst ?? 0).toFixed(2)}</span>
+                    <span>${Number(breakdown.hst ?? 0).toFixed(2)}</span>
                   </div>
-                )
-              ) : (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">{t('tax', lang)}</span>
-                  <span>${Number(invoice.taxAmount).toFixed(2)}</span>
-                </div>
-              )}
+                );
+              })()}
               <div className="flex justify-between text-base font-bold border-t pt-2">
                 <span>{t('total', lang)}</span>
                 <span>${Number(invoice.total).toFixed(2)}</span>
@@ -238,18 +264,17 @@ export function InvoicesPage() {
                   <td className="px-4 py-3 text-sm font-medium">{inv.customer?.name}</td>
                   <td className="px-4 py-3 text-sm">${inv.subtotal}</td>
                   <td className="px-4 py-3 text-sm">
-                    {inv.taxBreakdown ? (
-                      inv.taxType === 'GST_QST' ? (
+                    {(() => {
+                      const { type, breakdown } = getTaxBreakdown(inv);
+                      return type === 'GST_QST' ? (
                         <div className="space-y-0.5">
-                          <div className="text-xs text-gray-500">{t('gst', lang)}: ${Number(inv.taxBreakdown.gst ?? 0).toFixed(2)}</div>
-                          <div className="text-xs text-gray-500">{t('qst', lang)}: ${Number(inv.taxBreakdown.qst ?? 0).toFixed(2)}</div>
+                          <div className="text-xs text-gray-500">{t('gst', lang)}: ${Number(breakdown.gst ?? 0).toFixed(2)}</div>
+                          <div className="text-xs text-gray-500">{t('qst', lang)}: ${Number(breakdown.qst ?? 0).toFixed(2)}</div>
                         </div>
                       ) : (
-                        <div className="text-xs text-gray-500">{t('hst', lang)}: ${Number(inv.taxBreakdown.hst ?? 0).toFixed(2)}</div>
-                      )
-                    ) : (
-                      <span>${inv.taxAmount}</span>
-                    )}
+                        <div className="text-xs text-gray-500">{t('hst', lang)}: ${Number(breakdown.hst ?? 0).toFixed(2)}</div>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-3 text-sm font-bold">${inv.total}</td>
                   <td className="px-4 py-3 text-sm text-gray-500">{formatDateTz(inv.dueDate, 'MMM d, yyyy')}</td>

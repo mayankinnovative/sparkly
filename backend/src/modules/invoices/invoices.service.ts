@@ -29,7 +29,7 @@ export class InvoicesService {
     return prisma.invoice.findMany({
       where,
       include: {
-        customer: { select: { id: true, name: true, email: true } },
+        customer: { select: { id: true, name: true, email: true, customerType: true } },
         paymentLink: true,
       },
       orderBy: { createdAt: 'desc' },

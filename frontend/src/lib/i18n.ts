@@ -65,9 +65,9 @@ const translations = {
     employee: 'Employee',
     payrollRequiresBusiness: 'Payroll requires the Business plan.',
     // Tax
-    gst: 'GST (5%)',
-    qst: 'QST (9.975%)',
-    hst: 'HST (13%)',
+    gst: 'TPS/GST (5%)',
+    qst: 'TVQ/QST (9.975%)',
+    hst: 'HST/TVH (13%)',
     taxCollected: 'Tax Collected',
     taxBreakdown: 'Tax Breakdown',
     gstDescription: 'Federal goods and services tax',
