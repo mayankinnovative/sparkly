@@ -61,6 +61,17 @@ app.get('/api/v1/health', async (_req, res) => {
   }
 });
 
+// ─── Public pricing endpoint ────────────────────────────────────────────────
+app.get('/api/v1/pricing', async (_req, res) => {
+  try {
+    const setting = await prisma.platformSetting.findUnique({ where: { key: 'pricing' } });
+    const defaults = { solo: 19, pro: 29, business: 49 };
+    res.json({ success: true, data: (setting?.value as Record<string, number>) || defaults });
+  } catch {
+    res.json({ success: true, data: { solo: 19, pro: 29, business: 49 } });
+  }
+});
+
 // ─── API routes ─────────────────────────────────────────────────────────────
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', usersRoutes);

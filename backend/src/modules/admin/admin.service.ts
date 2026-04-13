@@ -211,8 +211,8 @@ export class AdminService {
       prisma.user.count(),
     ]);
 
-    // Calculate MRR based on plan pricing ($19 = solo, $29 = pro, $49 = business)
-    const planPricing: Record<string, number> = { solo: 19, pro: 29, business: 49 };
+    // Calculate MRR based on dynamic plan pricing from DB
+    const planPricing = await this.getPlanPricing();
     const mrr = subscriptions.reduce((sum, sub) => sum + (planPricing[sub.plan] || 0), 0);
 
     const startOfPeriodActive = activeAccounts + recentCancelled;
@@ -310,6 +310,13 @@ export class AdminService {
     await this.logAdminAction(adminUserId, 'delete_discount_code', 'discount_code', codeId);
   }
 
+  /** Get current plan pricing from DB (with fallback defaults) */
+  private async getPlanPricing(): Promise<Record<string, number>> {
+    const setting = await prisma.platformSetting.findUnique({ where: { key: 'pricing' } });
+    const defaults = { solo: 19, pro: 29, business: 49 };
+    return (setting?.value as Record<string, number>) || defaults;
+  }
+
   /** Platform settings (pricing etc.) */
   async getPlatformSettings(adminUserId: string) {
     const settings = await prisma.platformSetting.findMany();
@@ -343,7 +350,7 @@ export class AdminService {
     ]);
 
     // Calculate commission info
-    const planPricing: Record<string, number> = { solo: 19, pro: 29, business: 49 };
+    const planPricing = await this.getPlanPricing();
     const stripeCommissionRate = 0.029; // 2.9% + $0.30
     const stripeFixedFee = 0.30;
 

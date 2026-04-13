@@ -534,6 +534,7 @@ function SettingsPromosTab() {
       });
       setFeedback('Pricing updated');
       setTimeout(() => setFeedback(null), 3000);
+      fetchData();
     } catch (err) { console.error(err); }
     finally { setPriceSaving(false); }
   };

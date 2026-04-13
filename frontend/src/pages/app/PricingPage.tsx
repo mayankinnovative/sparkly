@@ -1,4 +1,4 @@
-// Link removed - unused
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,24 +6,24 @@ import { useAuthStore, hasPlanAccess } from '@/store/auth';
 import { t, type TranslationKey } from '@/lib/i18n';
 import type { Language, Plan } from '@/types';
 import { CheckCircle2, Sparkles } from 'lucide-react';
+import api from '@/lib/api';
 
-const plans: { name: Plan; label: string; price: string; features: TranslationKey[] }[] = [
+const defaultPricing: Record<string, number> = { solo: 19, pro: 29, business: 49 };
+
+const planMeta: { name: Plan; label: string; features: TranslationKey[] }[] = [
   {
     name: 'solo',
     label: 'Solo',
-    price: '$29',
     features: ['plan1User', 'planUnlimitedCustomers', 'planJobMgmt', 'planBasicInvoicing', 'planExpenseTracking', 'planDashboard'],
   },
   {
     name: 'pro',
     label: 'Pro',
-    price: '$49',
     features: ['planUpTo5Users', 'planEverythingInSolo', 'planRecurringJobs', 'planStaffMgmt', 'planRevenueReports', 'planPaymentLinks'],
   },
   {
     name: 'business',
     label: 'Business',
-    price: '$99',
     features: ['planUnlimitedUsers', 'planEverythingInPro', 'planPayrollWC', 'planAccountantRole', 'planTaxFiling', 'planPrioritySupport'],
   },
 ];
@@ -32,14 +32,24 @@ export function PricingPage() {
   const { language, account } = useAuthStore();
   const lang = language as Language;
   const currentPlan = account?.plan;
+  const [pricing, setPricing] = useState<Record<string, number>>(defaultPricing);
+
+  useEffect(() => {
+    api.get('/pricing')
+      .then((res) => {
+        if (res.data?.data) setPricing(res.data.data);
+      })
+      .catch(() => {/* use defaults */});
+  }, []);
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{t('pricing', lang)}</h1>
 
       <div className="grid md:grid-cols-3 gap-6">
-        {plans.map((plan) => {
+        {planMeta.map((plan) => {
           const isCurrent = currentPlan === plan.name;
+          const price = pricing[plan.name] ?? defaultPricing[plan.name];
           return (
             <Card key={plan.name} className={isCurrent ? 'border-sparkly-blue border-2 shadow-lg' : ''}>
               <CardHeader className="text-center">
@@ -48,7 +58,7 @@ export function PricingPage() {
                 )}
                 <CardTitle className="text-2xl">{plan.label}</CardTitle>
                 <div className="mt-2">
-                  <span className="text-4xl font-extrabold">{plan.price}</span>
+                  <span className="text-4xl font-extrabold">${price}</span>
                   <span className="text-gray-500">{t('perMonth', lang)}</span>
                 </div>
               </CardHeader>
