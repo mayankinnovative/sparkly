@@ -289,6 +289,30 @@ export class AdminService {
     return code;
   }
 
+  async updateDiscountCode(adminUserId: string, codeId: string, input: { code?: string; discountType?: string; discountValue?: number; maxUses?: number | null; expiresAt?: string | null }) {
+    const code = await prisma.discountCode.findUnique({ where: { id: codeId } });
+    if (!code) throw new AppError(404, 'Discount code not found', 'NOT_FOUND');
+
+    if (input.code && input.code.toUpperCase() !== code.code) {
+      const existing = await prisma.discountCode.findUnique({ where: { code: input.code.toUpperCase() } });
+      if (existing) throw new AppError(409, 'Discount code already exists', 'DUPLICATE_CODE');
+    }
+
+    const updated = await prisma.discountCode.update({
+      where: { id: codeId },
+      data: {
+        ...(input.code !== undefined && { code: input.code.toUpperCase() }),
+        ...(input.discountType !== undefined && { discountType: input.discountType }),
+        ...(input.discountValue !== undefined && { discountValue: input.discountValue }),
+        ...(input.maxUses !== undefined && { maxUses: input.maxUses }),
+        ...(input.expiresAt !== undefined && { expiresAt: input.expiresAt ? new Date(input.expiresAt) : null }),
+      },
+    });
+
+    await this.logAdminAction(adminUserId, 'update_discount_code', 'discount_code', codeId);
+    return updated;
+  }
+
   async toggleDiscountCode(adminUserId: string, codeId: string) {
     const code = await prisma.discountCode.findUnique({ where: { id: codeId } });
     if (!code) throw new AppError(404, 'Discount code not found', 'NOT_FOUND');

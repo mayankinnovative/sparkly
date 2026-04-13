@@ -13,7 +13,7 @@ import { formatDateTz } from '@/lib/timezone';
 import {
   LayoutDashboard, Users, CreditCard, Settings, Activity,
   ChevronLeft, ChevronRight, Loader2, Eye, KeyRound, LogIn,
-  Pause, Play, Trash2, Plus, X, DollarSign, TrendingDown, BarChart3, AlertTriangle,
+  Pause, Play, Trash2, Plus, X, DollarSign, TrendingDown, BarChart3, AlertTriangle, Pencil,
 } from 'lucide-react';
 
 type TabKey = 'dashboard' | 'users' | 'payments' | 'settings' | 'logs';
@@ -458,6 +458,7 @@ function SettingsPromosTab() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({ code: '', discountType: 'percentage', discountValue: '', maxUses: '', expiresAt: '' });
   const [soloPrice, setSoloPrice] = useState('19');
   const [proPrice, setProPrice] = useState('29');
@@ -492,18 +493,41 @@ function SettingsPromosTab() {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.post('/admin/discount-codes', {
-        code: form.code,
-        discountType: form.discountType,
-        discountValue: form.discountValue,
-        maxUses: form.maxUses || undefined,
-        expiresAt: form.expiresAt || undefined,
-      });
+      if (editId) {
+        await api.put(`/admin/discount-codes/${editId}`, {
+          code: form.code,
+          discountType: form.discountType,
+          discountValue: form.discountValue,
+          maxUses: form.maxUses || null,
+          expiresAt: form.expiresAt || null,
+        });
+      } else {
+        await api.post('/admin/discount-codes', {
+          code: form.code,
+          discountType: form.discountType,
+          discountValue: form.discountValue,
+          maxUses: form.maxUses || undefined,
+          expiresAt: form.expiresAt || undefined,
+        });
+      }
       setShowForm(false);
+      setEditId(null);
       setForm({ code: '', discountType: 'percentage', discountValue: '', maxUses: '', expiresAt: '' });
       fetchData();
     } catch (err) { console.error(err); }
     finally { setSaving(false); }
+  };
+
+  const handleEditCode = (c: any) => {
+    setEditId(c.id);
+    setForm({
+      code: c.code,
+      discountType: c.discountType,
+      discountValue: String(Number(c.discountValue)),
+      maxUses: c.maxUses ? String(c.maxUses) : '',
+      expiresAt: c.expiresAt ? new Date(c.expiresAt).toISOString().slice(0, 16) : '',
+    });
+    setShowForm(true);
   };
 
   const handleToggle = async (id: string) => {
@@ -579,7 +603,7 @@ function SettingsPromosTab() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Discount Codes</CardTitle>
-            <Button size="sm" onClick={() => setShowForm(!showForm)}>
+            <Button size="sm" onClick={() => { setShowForm(!showForm); if (showForm) { setEditId(null); setForm({ code: '', discountType: 'percentage', discountValue: '', maxUses: '', expiresAt: '' }); } }}>
               {showForm ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
               {showForm ? 'Cancel' : 'Create'}
             </Button>
@@ -615,7 +639,7 @@ function SettingsPromosTab() {
               </div>
               <Button type="submit" disabled={saving}>
                 {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                Create Code
+                {editId ? 'Update Code' : 'Create Code'}
               </Button>
             </form>
           )}
@@ -644,6 +668,9 @@ function SettingsPromosTab() {
                     )}
                   </div>
                   <div className="flex gap-1">
+                    <Button size="sm" variant="ghost" onClick={() => handleEditCode(c)}>
+                      <Pencil className="h-3 w-3" />
+                    </Button>
                     <Button size="sm" variant="ghost" onClick={() => handleToggle(c.id)}>
                       {c.isActive ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
                     </Button>

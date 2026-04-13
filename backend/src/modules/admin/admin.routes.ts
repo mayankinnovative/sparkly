@@ -193,6 +193,27 @@ router.post('/discount-codes', async (req, res) => {
   }
 });
 
+router.put('/discount-codes/:id', async (req, res) => {
+  try {
+    const { userId } = (req as AuthenticatedRequest).user!;
+    const { code, discountType, discountValue, maxUses, expiresAt } = req.body;
+    if (discountType && !['percentage', 'fixed'].includes(discountType)) {
+      return res.status(400).json(errorResponse('discountType must be percentage or fixed', 'INVALID_TYPE'));
+    }
+    const result = await adminService.updateDiscountCode(userId, req.params.id, {
+      code,
+      discountType,
+      discountValue: discountValue != null ? parseFloat(discountValue) : undefined,
+      maxUses: maxUses === '' || maxUses === null ? null : maxUses ? parseInt(maxUses) : undefined,
+      expiresAt: expiresAt === '' ? null : expiresAt,
+    });
+    res.json(successResponse(result));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
 router.patch('/discount-codes/:id/toggle', async (req, res) => {
   try {
     const { userId } = (req as AuthenticatedRequest).user!;
