@@ -22,8 +22,9 @@ const freshForm = () => ({
 });
 
 export function RecurringJobsPage() {
-  const { language, account } = useAuthStore();
+  const { language, account, user } = useAuthStore();
   const lang = language as Language;
+  const isSuperAdmin = user?.role === 'super_admin';
   const [jobs, setJobs] = useState<RecurringJob[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +38,7 @@ export function RecurringJobsPage() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const hasAccess = hasPlanAccess(account?.plan, 'pro');
+  const hasAccess = isSuperAdmin || hasPlanAccess(account?.plan, 'pro');
 
   const fetchJobs = () => {
     api.get('/recurring-jobs')
