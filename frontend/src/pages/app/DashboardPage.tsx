@@ -17,7 +17,7 @@ import {
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export function DashboardPage() {
-  const { language } = useAuthStore();
+  const { language, selectedAccountId } = useAuthStore();
   const lang = language as Language;
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [monthlyRevenue, setMonthlyRevenue] = useState<{ month: number; revenue: number }[]>([]);
@@ -49,7 +49,7 @@ export function DashboardPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectedAccountId]);
 
   if (loading) {
     return (

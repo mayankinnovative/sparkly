@@ -14,7 +14,7 @@ import {
 const EXPENSE_COLORS = ['#2563EB', '#7C3AED', '#059669', '#EA580C', '#DC2626', '#0891B2', '#CA8A04', '#6366F1', '#EC4899'];
 
 export function RevenueReportPage() {
-  const { language } = useAuthStore();
+  const { language, selectedAccountId } = useAuthStore();
   const lang = language as Language;
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [monthlyRevenue, setMonthlyRevenue] = useState<{ month: number; revenue: number }[]>([]);
@@ -39,7 +39,7 @@ export function RevenueReportPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectedAccountId]);
 
   if (loading) return <p className="text-center text-gray-500 py-12">{t('loading', lang)}</p>;
 

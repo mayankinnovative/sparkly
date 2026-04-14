@@ -11,7 +11,7 @@ import type { Customer, Language } from '@/types';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
 export function LogJobPage() {
-  const { language } = useAuthStore();
+  const { language, selectedAccountId } = useAuthStore();
   const lang = language as Language;
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [form, setForm] = useState({
@@ -27,7 +27,7 @@ export function LogJobPage() {
 
   useEffect(() => {
     api.get('/customers').then(({ data }) => setCustomers(data.data)).catch(console.error);
-  }, []);
+  }, [selectedAccountId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

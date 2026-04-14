@@ -23,16 +23,19 @@ interface RemittanceSummary {
 }
 
 export function PayrollPage() {
-  const { language, account, province } = useAuthStore();
+  const { language, account, province, user, selectedAccountId } = useAuthStore();
   const lang = language as Language;
+  const isSuperAdmin = user?.role === 'super_admin';
   const [entries, setEntries] = useState<PayrollEntry[]>([]);
   const [remittance, setRemittance] = useState<RemittanceSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const hasAccess = hasPlanAccess(account?.plan, 'business');
+  const hasAccess = isSuperAdmin || hasPlanAccess(account?.plan, 'business');
 
   useEffect(() => {
     if (!hasAccess) { setLoading(false); return; }
+    if (isSuperAdmin && !selectedAccountId) return;
+    setLoading(true);
     const now = new Date();
     const from = `${formatDateTz(now, 'yyyy')}-01-01T00:00:00.000Z`;
     const to = now.toISOString();
@@ -46,7 +49,7 @@ export function PayrollPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [hasAccess]);
+  }, [hasAccess, selectedAccountId]);
 
   if (!hasAccess) {
     return (

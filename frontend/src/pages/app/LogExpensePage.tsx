@@ -45,7 +45,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 const emptyForm = { category: 'supplies', description: '', amount: '', date: nowLocalInput() };
 
 export function LogExpensePage() {
-  const { language } = useAuthStore();
+  const { language, selectedAccountId } = useAuthStore();
   const lang = language as Language;
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loadingList, setLoadingList] = useState(true);
@@ -80,7 +80,7 @@ export function LogExpensePage() {
       .finally(() => setLoadingList(false));
   };
 
-  useEffect(() => { fetchExpenses(); }, []);
+  useEffect(() => { fetchExpenses(); }, [selectedAccountId]);
 
   const resetForm = () => {
     setForm({ ...emptyForm, date: nowLocalInput() });

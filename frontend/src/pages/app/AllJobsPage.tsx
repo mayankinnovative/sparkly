@@ -21,7 +21,7 @@ const statusConfig: Record<string, { variant: 'info' | 'warning' | 'success' | '
 };
 
 export function AllJobsPage() {
-  const { language } = useAuthStore();
+  const { language, selectedAccountId } = useAuthStore();
   const lang = language as Language;
   const [jobs, setJobs] = useState<Job[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -52,7 +52,7 @@ export function AllJobsPage() {
   useEffect(() => {
     fetchJobs();
     api.get('/customers').then(({ data }) => setCustomers(data.data)).catch(console.error);
-  }, []);
+  }, [selectedAccountId]);
 
   const markComplete = async (id: string) => {
     try {

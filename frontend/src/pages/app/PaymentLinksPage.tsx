@@ -9,7 +9,7 @@ import type { Invoice, Language } from '@/types';
 import { Link2, ExternalLink, Copy, CheckCircle2 } from 'lucide-react';
 
 export function PaymentLinksPage() {
-  const { language } = useAuthStore();
+  const { language, selectedAccountId } = useAuthStore();
   const lang = language as Language;
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +23,7 @@ export function PaymentLinksPage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectedAccountId]);
 
   const copyLink = (url: string, id: string) => {
     navigator.clipboard.writeText(url);

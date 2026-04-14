@@ -14,7 +14,7 @@ import { Plus, Users, X, Loader2, Pencil, Trash2, CheckCircle2, AlertCircle, Che
 const emptyForm = { name: '', email: '', phone: '', address: '', city: '', province: '', postalCode: '', customerType: 'QC' as CustomerType };
 
 export function CustomersPage() {
-  const { language } = useAuthStore();
+  const { language, selectedAccountId } = useAuthStore();
   const lang = language as Language;
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +49,7 @@ export function CustomersPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchCustomers(); }, []);
+  useEffect(() => { fetchCustomers(); }, [selectedAccountId]);
 
   const resetForm = () => {
     setForm(emptyForm);

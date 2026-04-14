@@ -18,7 +18,7 @@ interface TaxSummary {
 }
 
 export function TaxFilingPage() {
-  const { language } = useAuthStore();
+  const { language, selectedAccountId } = useAuthStore();
   const lang = language as Language;
   const [summary, setSummary] = useState<TaxSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export function TaxFilingPage() {
       .then(({ data }) => setSummary(data.data))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectedAccountId]);
 
   const hasGstQst = summary ? (summary.gst > 0 || summary.qst > 0) : false;
   const hasHst = summary ? summary.hst > 0 : false;
