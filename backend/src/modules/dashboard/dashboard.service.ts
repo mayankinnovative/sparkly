@@ -164,12 +164,33 @@ export class DashboardService {
       totalTax: 0,
       totalAmount: 0,
       invoiceCount: invoices.length,
+      gst: 0,
+      qst: 0,
+      hst: 0,
     };
 
     for (const inv of invoices) {
       summary.totalSubtotal += inv.subtotal.toNumber();
       summary.totalTax += inv.taxAmount.toNumber();
       summary.totalAmount += inv.total.toNumber();
+
+      // Aggregate actual per-tax-type amounts from stored breakdown
+      const breakdown = inv.taxBreakdown as Record<string, number> | null;
+      if (breakdown) {
+        if (breakdown.gst) summary.gst += breakdown.gst;
+        if (breakdown.qst) summary.qst += breakdown.qst;
+        if (breakdown.hst) summary.hst += breakdown.hst;
+      } else {
+        // Fallback: attribute entire taxAmount based on taxType
+        if (inv.taxType === 'HST') {
+          summary.hst += inv.taxAmount.toNumber();
+        } else {
+          // GST_QST — approximate split using standard rates
+          const sub = inv.subtotal.toNumber();
+          summary.gst += Math.round(sub * 0.05 * 100) / 100;
+          summary.qst += Math.round(sub * 0.09975 * 100) / 100;
+        }
+      }
     }
 
     // Round

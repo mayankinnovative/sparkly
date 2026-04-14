@@ -12,16 +12,13 @@ interface TaxSummary {
   totalTax: number;
   totalAmount: number;
   invoiceCount: number;
+  gst: number;
+  qst: number;
+  hst: number;
 }
 
-// Canadian tax rates by province
-const TAX_RATES: Record<string, { gst: number; qst?: number; hst?: number }> = {
-  QC: { gst: 0.05, qst: 0.09975 },
-  ON: { gst: 0.05, hst: 0.13 },
-};
-
 export function TaxFilingPage() {
-  const { language, province } = useAuthStore();
+  const { language } = useAuthStore();
   const lang = language as Language;
   const [summary, setSummary] = useState<TaxSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,10 +33,8 @@ export function TaxFilingPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const rates = TAX_RATES[province] || TAX_RATES.ON;
-  const estimatedGst = summary ? Math.round(summary.totalSubtotal * (rates.gst) * 100) / 100 : 0;
-  const estimatedQst = summary && rates.qst ? Math.round(summary.totalSubtotal * rates.qst * 100) / 100 : 0;
-  const estimatedHst = summary && rates.hst ? Math.round(summary.totalSubtotal * rates.hst * 100) / 100 : 0;
+  const hasGstQst = summary ? (summary.gst > 0 || summary.qst > 0) : false;
+  const hasHst = summary ? summary.hst > 0 : false;
 
   return (
     <div className="space-y-6">
@@ -74,35 +69,37 @@ export function TaxFilingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calculator className="h-5 w-5" />
-                {t('taxBreakdown', lang)} ({province === 'QC' ? 'GST + QST' : 'HST'})
+                {t('taxBreakdown', lang)}
+                {hasGstQst && hasHst ? ' (GST + QST / HST)' : hasGstQst ? ' (GST + QST)' : ' (HST)'}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {province === 'QC' ? (
+                {hasGstQst && (
                   <>
                     <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium">{t('gst', lang)}</p>
                         <p className="text-sm text-gray-500">{t('gstDescription', lang)}</p>
                       </div>
-                      <p className="text-xl font-bold">${estimatedGst.toLocaleString()}</p>
+                      <p className="text-xl font-bold">${summary!.gst.toLocaleString()}</p>
                     </div>
                     <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium">{t('qst', lang)}</p>
                         <p className="text-sm text-gray-500">{t('qstDescription', lang)}</p>
                       </div>
-                      <p className="text-xl font-bold">${estimatedQst.toLocaleString()}</p>
+                      <p className="text-xl font-bold">${summary!.qst.toLocaleString()}</p>
                     </div>
                   </>
-                ) : (
+                )}
+                {hasHst && (
                   <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
                     <div>
                       <p className="font-medium">{t('hst', lang)}</p>
                         <p className="text-sm text-gray-500">{t('hstDescription', lang)}</p>
                     </div>
-                    <p className="text-xl font-bold">${estimatedHst.toLocaleString()}</p>
+                    <p className="text-xl font-bold">${summary!.hst.toLocaleString()}</p>
                   </div>
                 )}
                 <div className="border-t pt-4 flex justify-between items-center font-bold text-lg">
