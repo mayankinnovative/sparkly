@@ -422,14 +422,16 @@ async function main() {
   console.log('✅ Recurring jobs created (QC)');
 
   // ─── 9. Invoices & Payment Links (QC) ─────────────────
-  const invoiceData = [
+  const invoiceDataQC = [
     {
       accountId: demoAccountQC.id,
       customerId: createdCustomersQC[2].id,
       lineItems: [{ description: 'Commercial cleaning — Northview Offices', qty: 1, rate: 690, amount: 690 }],
       subtotal: 690,
-      taxAmount: 690 * (0.05 + 0.09975),
-      total: 690 * (1 + 0.05 + 0.09975),
+      taxAmount: Math.round(690 * (0.05 + 0.09975) * 100) / 100,
+      total: Math.round(690 * (1 + 0.05 + 0.09975) * 100) / 100,
+      taxType: 'GST_QST',
+      taxBreakdown: { gst: Math.round(690 * 0.05 * 100) / 100, qst: Math.round(690 * 0.09975 * 100) / 100 },
       status: 'paid' as const,
       invoiceNo: 'CT-2026-0310-001',
       issuedDate: new Date('2026-03-10'),
@@ -441,8 +443,10 @@ async function main() {
       customerId: createdCustomersQC[0].id,
       lineItems: [{ description: 'Evening office cleaning — Maple Dental', qty: 1, rate: 840, amount: 840 }],
       subtotal: 840,
-      taxAmount: 840 * (0.05 + 0.09975),
-      total: 840 * (1 + 0.05 + 0.09975),
+      taxAmount: Math.round(840 * (0.05 + 0.09975) * 100) / 100,
+      total: Math.round(840 * (1 + 0.05 + 0.09975) * 100) / 100,
+      taxType: 'GST_QST',
+      taxBreakdown: { gst: Math.round(840 * 0.05 * 100) / 100, qst: Math.round(840 * 0.09975 * 100) / 100 },
       status: 'sent' as const,
       invoiceNo: 'CT-2026-0311-002',
       issuedDate: new Date('2026-03-11'),
@@ -454,8 +458,10 @@ async function main() {
       customerId: createdCustomersQC[3].id,
       lineItems: [{ description: 'Move-out cleaning — Parkside', qty: 1, rate: 510, amount: 510 }],
       subtotal: 510,
-      taxAmount: 510 * (0.05 + 0.09975),
-      total: 510 * (1 + 0.05 + 0.09975),
+      taxAmount: Math.round(510 * (0.05 + 0.09975) * 100) / 100,
+      total: Math.round(510 * (1 + 0.05 + 0.09975) * 100) / 100,
+      taxType: 'GST_QST',
+      taxBreakdown: { gst: Math.round(510 * 0.05 * 100) / 100, qst: Math.round(510 * 0.09975 * 100) / 100 },
       status: 'sent' as const,
       invoiceNo: 'CT-2026-0312-003',
       issuedDate: new Date('2026-03-12'),
@@ -464,23 +470,91 @@ async function main() {
     },
   ];
 
-  const paymentLinksData = [
+  const paymentLinksDataQC = [
     { method: 'Email', status: 'completed' as const, sentAt: new Date('2026-03-10') },
     { method: 'SMS', status: 'pending' as const, sentAt: new Date('2026-03-11') },
     { method: 'Email', status: 'pending' as const, sentAt: new Date('2026-03-12') },
   ];
 
-  for (let i = 0; i < invoiceData.length; i++) {
-    const invoice = await prisma.invoice.create({ data: invoiceData[i] });
+  for (let i = 0; i < invoiceDataQC.length; i++) {
+    const invoice = await prisma.invoice.create({ data: invoiceDataQC[i] });
     await prisma.paymentLink.create({
       data: {
         invoiceId: invoice.id,
-        ...paymentLinksData[i],
+        ...paymentLinksDataQC[i],
         url: `https://checkout.stripe.com/demo/${invoice.id}`,
       },
     });
   }
-  console.log('✅ Invoices and payment links created');
+  console.log('✅ Invoices and payment links created (QC)');
+
+  // ─── 9b. Invoices & Payment Links (ON) ────────────────
+  const invoiceDataON = [
+    {
+      accountId: demoAccountON.id,
+      customerId: createdCustomersON[0].id,
+      lineItems: [{ description: 'Office tower cleaning — Bay Street Tower', qty: 1, rate: 1200, amount: 1200 }],
+      subtotal: 1200,
+      taxAmount: Math.round(1200 * 0.13 * 100) / 100,
+      total: Math.round(1200 * 1.13 * 100) / 100,
+      taxType: 'HST',
+      taxBreakdown: { hst: Math.round(1200 * 0.13 * 100) / 100 },
+      status: 'paid' as const,
+      invoiceNo: 'CT-2026-0313-004',
+      issuedDate: new Date('2026-03-13'),
+      dueDate: new Date('2026-03-28'),
+      language: 'en',
+    },
+    {
+      accountId: demoAccountON.id,
+      customerId: createdCustomersON[1].id,
+      lineItems: [{ description: 'Condo common area cleaning — Yorkville Condos', qty: 1, rate: 950, amount: 950 }],
+      subtotal: 950,
+      taxAmount: Math.round(950 * 0.13 * 100) / 100,
+      total: Math.round(950 * 1.13 * 100) / 100,
+      taxType: 'HST',
+      taxBreakdown: { hst: Math.round(950 * 0.13 * 100) / 100 },
+      status: 'sent' as const,
+      invoiceNo: 'CT-2026-0314-005',
+      issuedDate: new Date('2026-03-14'),
+      dueDate: new Date('2026-03-29'),
+      language: 'en',
+    },
+    {
+      accountId: demoAccountON.id,
+      customerId: createdCustomersON[2].id,
+      lineItems: [{ description: 'Medical facility sanitization — Scarborough Medical', qty: 1, rate: 780, amount: 780 }],
+      subtotal: 780,
+      taxAmount: Math.round(780 * 0.13 * 100) / 100,
+      total: Math.round(780 * 1.13 * 100) / 100,
+      taxType: 'HST',
+      taxBreakdown: { hst: Math.round(780 * 0.13 * 100) / 100 },
+      status: 'draft' as const,
+      invoiceNo: 'CT-2026-0315-006',
+      issuedDate: new Date('2026-03-15'),
+      dueDate: new Date('2026-03-30'),
+      language: 'en',
+    },
+  ];
+
+  const paymentLinksDataON = [
+    { method: 'Email', status: 'completed' as const, sentAt: new Date('2026-03-13') },
+    { method: 'SMS', status: 'pending' as const, sentAt: new Date('2026-03-14') },
+  ];
+
+  for (let i = 0; i < invoiceDataON.length; i++) {
+    const invoice = await prisma.invoice.create({ data: invoiceDataON[i] });
+    if (paymentLinksDataON[i]) {
+      await prisma.paymentLink.create({
+        data: {
+          invoiceId: invoice.id,
+          ...paymentLinksDataON[i],
+          url: `https://checkout.stripe.com/demo/${invoice.id}`,
+        },
+      });
+    }
+  }
+  console.log('✅ Invoices and payment links created (ON)');
 
   // ─── 10. Payroll Entries (QC) ─────────────────────────
   const payrollQC = [
