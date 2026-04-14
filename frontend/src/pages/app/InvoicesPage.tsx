@@ -203,18 +203,22 @@ function InvoiceDetailModal({ invoiceId, lang, onClose }: { invoiceId: string; l
 }
 
 export function InvoicesPage() {
-  const { language } = useAuthStore();
+  const { language, user, selectedAccountId } = useAuthStore();
   const lang = language as Language;
+  const isSuperAdmin = user?.role === 'super_admin';
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
 
   useEffect(() => {
+    // Super admin needs an account selected to fetch invoices
+    if (isSuperAdmin && !selectedAccountId) return;
+    setLoading(true);
     api.get('/invoices')
       .then(({ data }) => setInvoices(data.data))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectedAccountId]);
 
   const createPaymentLink = async (invoiceId: string) => {
     try {

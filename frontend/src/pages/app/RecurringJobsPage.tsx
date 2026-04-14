@@ -22,7 +22,7 @@ const freshForm = () => ({
 });
 
 export function RecurringJobsPage() {
-  const { language, account, user } = useAuthStore();
+  const { language, account, user, selectedAccountId } = useAuthStore();
   const lang = language as Language;
   const isSuperAdmin = user?.role === 'super_admin';
   const [jobs, setJobs] = useState<RecurringJob[]>([]);
@@ -49,9 +49,11 @@ export function RecurringJobsPage() {
 
   useEffect(() => {
     if (!hasAccess) { setLoading(false); return; }
+    if (isSuperAdmin && !selectedAccountId) return;
+    setLoading(true);
     fetchJobs();
     api.get('/customers').then(({ data }) => setCustomers(data.data)).catch(console.error);
-  }, [hasAccess]);
+  }, [hasAccess, selectedAccountId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
