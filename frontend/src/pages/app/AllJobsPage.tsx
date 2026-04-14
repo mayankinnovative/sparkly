@@ -50,6 +50,7 @@ export function AllJobsPage() {
   };
 
   useEffect(() => {
+    setLoading(true);
     fetchJobs();
     api.get('/customers').then(({ data }) => setCustomers(data.data)).catch(console.error);
   }, [selectedAccountId]);

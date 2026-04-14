@@ -24,6 +24,7 @@ export function TaxFilingPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     const now = new Date();
     const from = `${formatDateTz(now, 'yyyy')}-01-01T00:00:00.000Z`;
     const to = now.toISOString();

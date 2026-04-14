@@ -49,7 +49,7 @@ export function CustomersPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchCustomers(); }, [selectedAccountId]);
+  useEffect(() => { setLoading(true); fetchCustomers(); }, [selectedAccountId]);
 
   const resetForm = () => {
     setForm(emptyForm);

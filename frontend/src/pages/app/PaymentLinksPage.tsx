@@ -16,6 +16,7 @@ export function PaymentLinksPage() {
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
+    setLoading(true);
     api.get('/invoices')
       .then(({ data }) => {
         const withLinks = data.data.filter((inv: Invoice) => inv.paymentLink);

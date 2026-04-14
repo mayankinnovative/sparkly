@@ -17,6 +17,7 @@ export function TopBar() {
         setAccounts(list);
         if (!selectedAccountId && list.length > 0) {
           setSelectedAccountId(list[0].id);
+          setProvince(list[0].province);
         }
       }).catch(console.error);
     }
@@ -27,7 +28,13 @@ export function TopBar() {
   };
 
   const toggleProvince = () => {
-    setProvince(province === 'QC' ? 'ON' : 'QC');
+    const newProvince = province === 'QC' ? 'ON' : 'QC';
+    setProvince(newProvince);
+    // For super admin, also switch to a matching account
+    if (isSuperAdmin && accounts.length > 0) {
+      const match = accounts.find((a) => a.province === newProvince);
+      if (match) setSelectedAccountId(match.id);
+    }
   };
 
   const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
@@ -44,7 +51,12 @@ export function TopBar() {
             <Building2 className="h-5 w-5 text-sparkly-blue" />
             <select
               value={selectedAccountId || ''}
-              onChange={(e) => setSelectedAccountId(e.target.value || null)}
+              onChange={(e) => {
+                const id = e.target.value || null;
+                setSelectedAccountId(id);
+                const acct = accounts.find((a) => a.id === id);
+                if (acct) setProvince(acct.province);
+              }}
               className="text-lg font-semibold text-gray-800 bg-transparent border-none outline-none cursor-pointer pr-2"
             >
               {accounts.map((a) => (

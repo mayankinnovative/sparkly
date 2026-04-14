@@ -22,6 +22,7 @@ export function RevenueReportPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     const now = new Date();
     const year = parseInt(formatDateTz(now, 'yyyy'), 10);
     const from = `${year}-01-01T00:00:00.000Z`;

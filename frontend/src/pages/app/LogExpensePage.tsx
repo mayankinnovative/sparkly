@@ -80,7 +80,7 @@ export function LogExpensePage() {
       .finally(() => setLoadingList(false));
   };
 
-  useEffect(() => { fetchExpenses(); }, [selectedAccountId]);
+  useEffect(() => { setLoadingList(true); fetchExpenses(); }, [selectedAccountId]);
 
   const resetForm = () => {
     setForm({ ...emptyForm, date: nowLocalInput() });
