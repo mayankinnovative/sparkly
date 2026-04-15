@@ -34,7 +34,10 @@ export class AdminService {
     ]);
 
     await this.logAdminAction(adminUserId, 'list_accounts', 'account', undefined, { page, pageSize });
-    return { accounts, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+    return {
+      accounts: accounts.map((a) => ({ ...a, businessName: a.name })),
+      total, page, pageSize, totalPages: Math.ceil(total / pageSize),
+    };
   }
 
   async getAccountDetails(adminUserId: string, accountId: string) {

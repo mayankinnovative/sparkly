@@ -13,7 +13,8 @@ export function TopBar() {
   useEffect(() => {
     if (isSuperAdmin) {
       api.get('/admin/accounts').then(({ data }) => {
-        const list = (data.data?.accounts || data.data || []) as Account[];
+        const raw = (data.data?.accounts || data.data || []) as any[];
+        const list: Account[] = raw.map((a) => ({ ...a, businessName: a.businessName || a.name }));
         setAccounts(list);
         if (!selectedAccountId && list.length > 0) {
           setSelectedAccountId(list[0].id);
