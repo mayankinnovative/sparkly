@@ -16,10 +16,6 @@ export function TopBar() {
         const raw = (data.data?.accounts || data.data || []) as any[];
         const list: Account[] = raw.map((a) => ({ ...a, businessName: a.businessName || a.name }));
         setAccounts(list);
-        if (!selectedAccountId && list.length > 0) {
-          setSelectedAccountId(list[0].id);
-          setProvince(list[0].province);
-        }
       }).catch(console.error);
     }
   }, [isSuperAdmin]);
@@ -31,8 +27,8 @@ export function TopBar() {
   const toggleProvince = () => {
     const newProvince = province === 'QC' ? 'ON' : 'QC';
     setProvince(newProvince);
-    // For super admin, also switch to a matching account
-    if (isSuperAdmin && accounts.length > 0) {
+    // For super admin, switch to a matching account or stay on All Accounts
+    if (isSuperAdmin && selectedAccountId && accounts.length > 0) {
       const match = accounts.find((a) => a.province === newProvince);
       if (match) setSelectedAccountId(match.id);
     }
@@ -60,8 +56,9 @@ export function TopBar() {
               }}
               className="text-lg font-semibold text-gray-800 bg-transparent border-none outline-none cursor-pointer pr-2"
             >
+              <option value="">All Accounts</option>
               {accounts.map((a) => (
-                <option key={a.id} value={a.id}>{a.businessName}</option>
+                <option key={a.id} value={a.id}>{a.businessName} ({a.province})</option>
               ))}
             </select>
           </div>
