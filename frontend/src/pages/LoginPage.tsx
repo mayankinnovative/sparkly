@@ -10,7 +10,7 @@ import { Sparkles, Loader2 } from 'lucide-react';
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { setTokens, setUser, setAccount } = useAuthStore();
+  const { setTokens, setUser, setAccount, setSelectedAccountId } = useAuthStore();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -27,6 +27,7 @@ export function LoginPage() {
       setTokens(accessToken, refreshToken);
       setUser(user);
       if (account) setAccount(account);
+      setSelectedAccountId(null);
       navigate('/app');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
