@@ -52,7 +52,14 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
         }),
     }),
-    { name: 'sparkly-auth' },
+    { 
+      name: 'sparkly-auth',
+      partialize: (state) => {
+        // Don't persist selectedAccountId — super admin should start fresh each session
+        const { selectedAccountId, ...rest } = state;
+        return rest;
+      },
+    },
   ),
 );
 
