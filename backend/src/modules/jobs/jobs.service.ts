@@ -1,6 +1,7 @@
 import prisma from '../../config/database';
 import { AppError, tenantFilter, requireAccountId } from '../../utils/response';
 import { CreateJobInput, UpdateJobInput } from './jobs.schema';
+import { invoicesService } from '../invoices/invoices.service';
 
 export class JobsService {
   async list(accountId: string | null, filters?: { status?: string; customerId?: string; assignedToId?: string; from?: string; to?: string }) {
@@ -92,18 +93,44 @@ export class JobsService {
     await prisma.job.delete({ where: { id } });
   }
 
-  async markCompleted(accountId: string | null, id: string) {
+  async markCompleted(accountId: string | null, id: string, timezone?: string) {
     const aid = requireAccountId(accountId);
     const job = await prisma.job.findFirst({ where: { id, accountId: aid } });
     if (!job) throw new AppError(404, 'Job not found', 'NOT_FOUND');
 
-    return prisma.job.update({
+    const updatedJob = await prisma.job.update({
       where: { id },
       data: {
         status: 'completed',
         completedAt: new Date(),
       },
     });
+
+    // Auto-generate invoice if job has a customer
+    if (job.customerId) {
+      try {
+        const account = await prisma.account.findUnique({ where: { id: aid } });
+        const taxType = account?.province === 'ON' ? 'HST' : 'GST_QST';
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + 30);
+
+        await invoicesService.create(
+          accountId,
+          {
+            customerId: job.customerId,
+            jobIds: [job.id],
+            dueDate: dueDate.toISOString(),
+            taxType: taxType as 'GST_QST' | 'HST',
+            language: 'en',
+          },
+          timezone,
+        );
+      } catch {
+        // Invoice generation failure should not block job completion
+      }
+    }
+
+    return updatedJob;
   }
 }
 

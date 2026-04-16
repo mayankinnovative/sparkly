@@ -53,7 +53,7 @@ router.put('/:id', validate(updateJobSchema), async (req, res) => {
 
 router.patch('/:id/complete', async (req, res) => {
   try {
-    const job = await jobsService.markCompleted(req.user!.accountId, req.params.id);
+    const job = await jobsService.markCompleted(req.user!.accountId, req.params.id, req.timezone);
     res.json(successResponse(job));
   } catch (err: any) {
     const status = err.statusCode || 500;
