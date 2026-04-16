@@ -14,7 +14,7 @@ interface AuthState {
 
   setTokens: (access: string, refresh: string) => void;
   setUser: (user: User) => void;
-  setAccount: (account: Account) => void;
+  setAccount: (account: Account | null) => void;
   setSelectedAccountId: (id: string | null) => void;
   setProvince: (province: Province) => void;
   setLanguage: (language: Language) => void;
@@ -37,7 +37,7 @@ export const useAuthStore = create<AuthState>()(
         set({ accessToken, refreshToken, isAuthenticated: true }),
 
       setUser: (user) => set({ user }),
-      setAccount: (account) => set({ account, province: account.province as Province }),
+      setAccount: (account) => set(account ? { account, province: account.province as Province } : { account }),
       setSelectedAccountId: (selectedAccountId) => set({ selectedAccountId }),
       setProvince: (province) => set({ province }),
       setLanguage: (language) => set({ language }),

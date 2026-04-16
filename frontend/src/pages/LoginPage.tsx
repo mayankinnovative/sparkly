@@ -26,7 +26,7 @@ export function LoginPage() {
       const { accessToken, refreshToken, user, account } = data.data;
       setTokens(accessToken, refreshToken);
       setUser(user);
-      setAccount(account);
+      if (account) setAccount(account);
       navigate('/app');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
