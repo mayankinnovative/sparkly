@@ -26,3 +26,7 @@ desktop.ini
 # logs
 *.log
 npm-debug.log*
+
+# credentials / local notes (never commit these)
+login_cred.txt
+credentials.md
