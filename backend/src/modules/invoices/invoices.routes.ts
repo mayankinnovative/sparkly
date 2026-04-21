@@ -38,6 +38,21 @@ router.post('/webhook', async (req: Request, res: Response) => {
 // ─── Authenticated routes ───────────────────────────────────────────────────
 router.use(authenticate, tenantScope);
 
+// Verify a Stripe session and mark invoice paid (for when webhook hasn't fired yet)
+router.post('/verify-payment', async (req, res) => {
+  try {
+    const { sessionId } = z.object({ sessionId: z.string().min(1) }).parse(req.body);
+    await invoicesService.handlePaymentSuccess(sessionId);
+    res.json(successResponse({ verified: true }));
+  } catch (err: any) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json(errorResponse('sessionId required', 'VALIDATION_ERROR'));
+    }
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
 router.get('/', async (req, res) => {
   try {
     const { status, customerId } = req.query as any;

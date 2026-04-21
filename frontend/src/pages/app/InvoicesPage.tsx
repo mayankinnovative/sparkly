@@ -8,7 +8,7 @@ import { t } from '@/lib/i18n';
 import api from '@/lib/api';
 import type { Invoice, Language, TaxBreakdown } from '@/types';
 import { formatDateTz } from '@/lib/timezone';
-import { FileText, ExternalLink, Eye, X, Send, CheckCircle2 } from 'lucide-react';
+import { FileText, ExternalLink, Eye, X, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const statusVariant: Record<string, 'info' | 'warning' | 'success' | 'destructive' | 'secondary'> = {
   draft: 'secondary',
@@ -302,10 +302,35 @@ export function InvoicesPage() {
   const [loading, setLoading] = useState(true);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [sendLinkInvoice, setSendLinkInvoice] = useState<Invoice | null>(null);
+  const [paymentBanner, setPaymentBanner] = useState<'success' | 'cancelled' | null>(null);
 
   const refreshInvoices = () => {
     api.get('/invoices').then(({ data }) => setInvoices(data.data)).catch(console.error);
   };
+
+  // Handle Stripe redirect: ?payment=success&session_id=xxx OR ?payment=cancelled
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const payment = params.get('payment');
+    const sessionId = params.get('session_id');
+
+    if (payment === 'success') {
+      setPaymentBanner('success');
+      // Verify session with backend to ensure DB is updated (in case webhook hasn't fired)
+      if (sessionId) {
+        api.post('/invoices/verify-payment', { sessionId })
+          .catch(() => {/* webhook may have already handled it */})
+          .finally(() => refreshInvoices());
+      } else {
+        refreshInvoices();
+      }
+      // Clean URL params without page reload
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (payment === 'cancelled') {
+      setPaymentBanner('cancelled');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -318,6 +343,30 @@ export function InvoicesPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{t('invoices', lang)}</h1>
+
+      {/* Payment result banner */}
+      {paymentBanner === 'success' && (
+        <div className="flex items-center justify-between gap-3 rounded-lg bg-green-50 border border-green-200 px-4 py-3">
+          <div className="flex items-center gap-2 text-green-800">
+            <CheckCircle2 className="h-5 w-5 shrink-0" />
+            <span className="text-sm font-medium">{t('paymentSuccess', lang)}</span>
+          </div>
+          <Button size="sm" variant="ghost" className="text-green-700 hover:text-green-900 h-7 px-2" onClick={() => setPaymentBanner(null)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+      {paymentBanner === 'cancelled' && (
+        <div className="flex items-center justify-between gap-3 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3">
+          <div className="flex items-center gap-2 text-amber-800">
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            <span className="text-sm font-medium">{t('paymentCancelled', lang)}</span>
+          </div>
+          <Button size="sm" variant="ghost" className="text-amber-700 hover:text-amber-900 h-7 px-2" onClick={() => setPaymentBanner(null)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       {loading ? (
         <p className="text-center text-gray-500 py-12">{t('loading', lang)}</p>

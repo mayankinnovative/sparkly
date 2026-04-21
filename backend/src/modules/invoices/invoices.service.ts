@@ -157,7 +157,7 @@ export class InvoicesService {
           },
         ],
         mode: 'payment',
-        success_url: `${corsOrigin}/app/invoices?payment=success`,
+        success_url: `${corsOrigin}/app/invoices?payment=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${corsOrigin}/app/invoices?payment=cancelled`,
         metadata: { invoiceId, invoiceNo: invoice.invoiceNo, accountId: aid },
         customer_email: recipientEmail,
