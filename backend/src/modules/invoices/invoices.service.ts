@@ -118,11 +118,15 @@ export class InvoicesService {
   }
 
   async createPaymentLink(accountId: string | null, invoiceId: string, recipientEmail: string) {
-    const aid = requireAccountId(accountId);
+    // tenantFilter(null) = {} so super_admin can access any invoice
     const invoice = await prisma.invoice.findFirst({
-      where: { id: invoiceId, accountId: aid },
+      where: { id: invoiceId, ...tenantFilter(accountId) },
       include: { customer: true },
     });
+    if (!invoice) throw new AppError(404, 'Invoice not found', 'NOT_FOUND');
+
+    // Use the invoice's own accountId (works for both account_owner and super_admin)
+    const aid = invoice.accountId;
     if (!invoice) throw new AppError(404, 'Invoice not found', 'NOT_FOUND');
     if (invoice.status === 'paid') throw new AppError(400, 'Invoice already paid', 'ALREADY_PAID');
     if (invoice.status === 'cancelled') throw new AppError(400, 'Invoice is cancelled', 'INVOICE_CANCELLED');
