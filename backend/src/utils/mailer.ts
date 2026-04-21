@@ -119,12 +119,42 @@ export async function sendPaymentLinkEmail(opts: PaymentLinkEmailOptions): Promi
 
   const text = `Invoice ${invoiceNo}\n\nHi ${customerName},\n\nYou have a payment of ${formattedTotal} due${dueDate ? ` by ${dueDate}` : ''}.\n\nPay here: ${paymentUrl}\n\n— Sparkly Billing`;
 
+  const subject = `Invoice ${invoiceNo} — Payment of ${formattedTotal} Due`;
+
+  // ── Brevo HTTP API (works on Vercel serverless — SMTP is blocked there) ──
+  if (process.env.BREVO_API_KEY) {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': process.env.BREVO_API_KEY,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: { name: fromName, email: fromEmail },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+        textContent: text,
+      }),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`Brevo API error ${res.status}: ${errBody}`);
+    }
+
+    logger.info({ to }, '📧 Email sent via Brevo HTTP API');
+    return;
+  }
+
+  // ── Fallback: nodemailer (SMTP for local dev or Ethereal preview) ──────
   const transporter = await getTransporter();
 
   const info = await transporter.sendMail({
     from: `"${fromName}" <${fromEmail}>`,
     to,
-    subject: `Invoice ${invoiceNo} — Payment of ${formattedTotal} Due`,
+    subject,
     html,
     text,
   });
@@ -132,7 +162,6 @@ export async function sendPaymentLinkEmail(opts: PaymentLinkEmailOptions): Promi
   const previewUrl = nodemailer.getTestMessageUrl(info);
   if (previewUrl) {
     logger.info({ previewUrl, to }, '📧 Email sent (Ethereal preview)');
-    // Also log to stdout so it's easy to find during local dev
     console.log('\n\x1b[36m━━━ EMAIL PREVIEW URL ━━━\x1b[0m');
     console.log(`\x1b[33mTo:\x1b[0m ${to}`);
     console.log(`\x1b[33mPreview:\x1b[0m ${previewUrl}`);
