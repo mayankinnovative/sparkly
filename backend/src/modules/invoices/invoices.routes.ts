@@ -81,6 +81,13 @@ router.put('/:id', validate(updateInvoiceSchema), async (req, res) => {
 
 router.post('/:id/payment-link', requireRole('account_owner'), async (req, res) => {
   try {
+    // super_admin passes requireRole (level >= account_owner) but has no accountId
+    if (!req.user!.accountId) {
+      return res.status(403).json(errorResponse(
+        'Payment links can only be sent by an account owner. Super Admin does not have a tenant account.',
+        'NO_ACCOUNT_CONTEXT',
+      ));
+    }
     const { email } = z.object({ email: z.string().email('Invalid email address') }).parse(req.body);
     const link = await invoicesService.createPaymentLink(req.user!.accountId, req.params.id as string, email);
     res.status(201).json(successResponse(link));

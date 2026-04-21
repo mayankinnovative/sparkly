@@ -155,7 +155,7 @@ export class InvoicesService {
         mode: 'payment',
         success_url: `${corsOrigin}/app/invoices?payment=success`,
         cancel_url: `${corsOrigin}/app/invoices?payment=cancelled`,
-        metadata: { invoiceId, accountId: aid },
+        metadata: { invoiceId, invoiceNo: invoice.invoiceNo, accountId: aid },
         customer_email: recipientEmail,
       });
 
@@ -194,12 +194,21 @@ export class InvoicesService {
     return paymentLink;
   }
 
-  /** Called by Stripe webhook */
+  /** Called by Stripe webhook on checkout.session.completed */
   async handlePaymentSuccess(sessionId: string) {
-    const paymentLink = await prisma.paymentLink.findFirst({
+    // Try by session ID first, fall back to invoiceId from metadata
+    let paymentLink = await prisma.paymentLink.findFirst({
       where: { stripeSessionId: sessionId },
     });
-    if (!paymentLink) return;
+
+    if (!paymentLink) {
+      // Fallback: retrieve session from Stripe to get invoiceId from metadata
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      const invoiceId = session.metadata?.invoiceId;
+      if (!invoiceId) return;
+      paymentLink = await prisma.paymentLink.findFirst({ where: { invoiceId } });
+      if (!paymentLink) return;
+    }
 
     await prisma.$transaction([
       prisma.paymentLink.update({
