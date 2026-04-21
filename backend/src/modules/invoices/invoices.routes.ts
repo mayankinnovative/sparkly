@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import { authenticate } from '../../middleware/auth';
 import { requireRole } from '../../middleware/rbac';
 import { tenantScope } from '../../middleware/tenantScope';
@@ -80,9 +81,13 @@ router.put('/:id', validate(updateInvoiceSchema), async (req, res) => {
 
 router.post('/:id/payment-link', requireRole('account_owner'), async (req, res) => {
   try {
-    const link = await invoicesService.createPaymentLink(req.user!.accountId, req.params.id as string);
+    const { email } = z.object({ email: z.string().email('Invalid email address') }).parse(req.body);
+    const link = await invoicesService.createPaymentLink(req.user!.accountId, req.params.id as string, email);
     res.status(201).json(successResponse(link));
   } catch (err: any) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json(errorResponse(err.errors[0]?.message || 'Invalid email', 'VALIDATION_ERROR'));
+    }
     const status = err.statusCode || 500;
     res.status(status).json(errorResponse(err.message, err.code));
   }

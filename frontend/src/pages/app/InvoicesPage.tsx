@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/store/auth';
 import { t } from '@/lib/i18n';
 import api from '@/lib/api';
 import type { Invoice, Language, TaxBreakdown } from '@/types';
 import { formatDateTz } from '@/lib/timezone';
-import { FileText, ExternalLink, Eye, X } from 'lucide-react';
+import { FileText, ExternalLink, Eye, X, Send, CheckCircle2 } from 'lucide-react';
 
 const statusVariant: Record<string, 'info' | 'warning' | 'success' | 'destructive' | 'secondary'> = {
   draft: 'secondary',
@@ -49,6 +50,98 @@ function getTaxBreakdown(inv: Invoice): { type: 'GST_QST' | 'HST'; breakdown: Ta
 
 type InvoiceDetail = Invoice;
 
+// ─── SendLinkModal ───────────────────────────────────────────────────────────
+function SendLinkModal({ invoice, lang, onClose, onSuccess }: {
+  invoice: Invoice;
+  lang: Language;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [email, setEmail] = useState(invoice.customer?.email || '');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  const handleSend = async () => {
+    setError(null);
+    setSending(true);
+    try {
+      await api.post(`/invoices/${invoice.id}/payment-link`, { email });
+      setSent(true);
+      setTimeout(() => { onSuccess(); onClose(); }, 1800);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Failed to send. Please try again.');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-50 w-full max-w-md rounded-xl bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold">{t('sendPaymentLink', lang)}</h2>
+          <Button size="icon" variant="ghost" onClick={onClose}><X className="h-4 w-4" /></Button>
+        </div>
+
+        {sent ? (
+          <div className="text-center py-6">
+            <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-3" />
+            <p className="text-base font-semibold text-gray-800">{t('emailSentSuccess', lang)}</p>
+            <p className="text-sm text-gray-500 mt-1">{email}</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-3">
+                Invoice <span className="font-mono font-semibold">{invoice.invoiceNo}</span>
+                {' '}— <strong>${Number(invoice.total).toFixed(2)}</strong>
+              </p>
+              <label className="text-sm font-medium text-gray-700 block mb-1.5">
+                {t('recipientEmail', lang)}
+              </label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="customer@example.com"
+                onKeyDown={(e) => { if (e.key === 'Enter' && email.trim()) handleSend(); }}
+                autoFocus
+              />
+            </div>
+
+            {error && (
+              <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+            )}
+
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" onClick={onClose} disabled={sending}>
+                {t('cancel', lang)}
+              </Button>
+              <Button
+                onClick={handleSend}
+                disabled={sending || !email.trim()}
+                className="gap-2"
+              >
+                <Send className="h-4 w-4" />
+                {sending ? t('sending', lang) : t('sendLink', lang)}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── InvoiceDetailModal ───────────────────────────────────────────────────────
 function InvoiceDetailModal({ invoiceId, lang, onClose }: { invoiceId: string; lang: Language; onClose: () => void }) {
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -208,6 +301,11 @@ export function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  const [sendLinkInvoice, setSendLinkInvoice] = useState<Invoice | null>(null);
+
+  const refreshInvoices = () => {
+    api.get('/invoices').then(({ data }) => setInvoices(data.data)).catch(console.error);
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -216,19 +314,6 @@ export function InvoicesPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [selectedAccountId]);
-
-  const createPaymentLink = async (invoiceId: string) => {
-    try {
-      const { data } = await api.post(`/invoices/${invoiceId}/payment-link`);
-      const link = data.data;
-      // Refresh invoices
-      const res = await api.get('/invoices');
-      setInvoices(res.data.data);
-      if (link.url) window.open(link.url, '_blank');
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -290,12 +375,18 @@ export function InvoicesPage() {
                         <Eye className="h-3 w-3 mr-1" /> {t('viewDetails', lang)}
                       </Button>
                       {inv.paymentLink?.url ? (
-                        <a href={inv.paymentLink.url} target="_blank" rel="noopener noreferrer" className="text-sparkly-blue hover:underline flex items-center gap-1 text-sm">
-                          <ExternalLink className="h-3 w-3" /> {t('pay', lang)}
-                        </a>
+                        <>
+                          <a href={inv.paymentLink.url} target="_blank" rel="noopener noreferrer"
+                            className="text-sparkly-blue hover:underline flex items-center gap-1 text-sm">
+                            <ExternalLink className="h-3 w-3" /> {t('openStripeLink', lang)}
+                          </a>
+                          <Button size="sm" variant="outline" onClick={() => setSendLinkInvoice(inv)} className="gap-1">
+                            <Send className="h-3 w-3" /> {t('resendLink', lang)}
+                          </Button>
+                        </>
                       ) : inv.status !== 'paid' && inv.status !== 'cancelled' ? (
-                        <Button size="sm" variant="outline" onClick={() => createPaymentLink(inv.id)}>
-                          {t('createLink', lang)}
+                        <Button size="sm" variant="outline" onClick={() => setSendLinkInvoice(inv)} className="gap-1">
+                          <Send className="h-3 w-3" /> {t('sendPaymentLink', lang)}
                         </Button>
                       ) : null}
                     </div>
@@ -312,6 +403,15 @@ export function InvoicesPage() {
           invoiceId={selectedInvoiceId}
           lang={lang}
           onClose={() => setSelectedInvoiceId(null)}
+        />
+      )}
+
+      {sendLinkInvoice && (
+        <SendLinkModal
+          invoice={sendLinkInvoice}
+          lang={lang}
+          onClose={() => setSendLinkInvoice(null)}
+          onSuccess={refreshInvoices}
         />
       )}
     </div>

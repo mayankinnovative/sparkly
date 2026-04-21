@@ -4,6 +4,7 @@ import { CreateInvoiceInput, UpdateInvoiceInput } from './invoices.schema';
 import Stripe from 'stripe';
 import { config } from '../../config';
 import { todayInTimezone } from '../../utils/timezone';
+import { sendPaymentLinkEmail } from '../../utils/mailer';
 
 const stripe = new Stripe(config.stripe.secretKey);
 
@@ -116,7 +117,7 @@ export class InvoicesService {
     return prisma.invoice.update({ where: { id }, data });
   }
 
-  async createPaymentLink(accountId: string | null, invoiceId: string) {
+  async createPaymentLink(accountId: string | null, invoiceId: string, recipientEmail: string) {
     const aid = requireAccountId(accountId);
     const invoice = await prisma.invoice.findFirst({
       where: { id: invoiceId, accountId: aid },
@@ -124,47 +125,73 @@ export class InvoicesService {
     });
     if (!invoice) throw new AppError(404, 'Invoice not found', 'NOT_FOUND');
     if (invoice.status === 'paid') throw new AppError(400, 'Invoice already paid', 'ALREADY_PAID');
+    if (invoice.status === 'cancelled') throw new AppError(400, 'Invoice is cancelled', 'INVOICE_CANCELLED');
 
-    // Check for existing pending payment link
-    const existing = await prisma.paymentLink.findFirst({
+    // Re-use existing pending link or create a new Stripe session
+    let paymentLink = await prisma.paymentLink.findFirst({
       where: { invoiceId, status: 'pending' },
     });
-    if (existing) return existing;
 
-    // Create Stripe Checkout Session
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'cad',
-            product_data: {
-              name: `Invoice ${invoice.invoiceNo}`,
-              description: `Payment for ${invoice.customer.name}`,
+    if (!paymentLink) {
+      const corsOrigin = Array.isArray(config.corsOrigin)
+        ? config.corsOrigin[0]
+        : config.corsOrigin;
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'cad',
+              product_data: {
+                name: `Invoice ${invoice.invoiceNo}`,
+                description: `Payment for ${invoice.customer.name}`,
+              },
+              unit_amount: Math.round(invoice.total.toNumber() * 100),
             },
-            unit_amount: Math.round(invoice.total.toNumber() * 100), // cents
+            quantity: 1,
           },
-          quantity: 1,
+        ],
+        mode: 'payment',
+        success_url: `${corsOrigin}/app/invoices?payment=success`,
+        cancel_url: `${corsOrigin}/app/invoices?payment=cancelled`,
+        metadata: { invoiceId, accountId: aid },
+        customer_email: recipientEmail,
+      });
+
+      paymentLink = await prisma.paymentLink.create({
+        data: {
+          invoiceId,
+          stripeSessionId: session.id,
+          url: session.url!,
+          status: 'pending',
         },
-      ],
-      mode: 'payment',
-      success_url: `${config.corsOrigin}/invoices/${invoiceId}?payment=success`,
-      cancel_url: `${config.corsOrigin}/invoices/${invoiceId}?payment=cancelled`,
-      metadata: {
-        invoiceId,
-        accountId,
-      },
+      });
+
+      // Mark invoice as sent
+      await prisma.invoice.update({
+        where: { id: invoiceId },
+        data: { status: 'sent' },
+      });
+    }
+
+    // Send email with payment link
+    await sendPaymentLinkEmail({
+      to: recipientEmail,
+      invoiceNo: invoice.invoiceNo,
+      customerName: invoice.customer.name,
+      total: invoice.total.toNumber(),
+      paymentUrl: paymentLink.url!,
+      dueDate: new Date(invoice.dueDate).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }),
     });
 
-    // Save payment link
-    return prisma.paymentLink.create({
-      data: {
-        invoiceId,
-        stripeSessionId: session.id,
-        url: session.url!,
-        status: 'pending',
-      },
+    // Record sent timestamp
+    await prisma.paymentLink.update({
+      where: { id: paymentLink.id },
+      data: { sentAt: new Date(), method: 'Email' },
     });
+
+    return paymentLink;
   }
 
   /** Called by Stripe webhook */
