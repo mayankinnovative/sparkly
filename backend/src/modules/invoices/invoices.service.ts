@@ -137,9 +137,7 @@ export class InvoicesService {
     });
 
     if (!paymentLink) {
-      const corsOrigin = Array.isArray(config.corsOrigin)
-        ? config.corsOrigin[0]
-        : config.corsOrigin;
+      const appUrl = process.env.CORS_ORIGIN || 'https://sparkly-kohl.vercel.app';
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -157,8 +155,8 @@ export class InvoicesService {
           },
         ],
         mode: 'payment',
-        success_url: `${corsOrigin}/app/invoices?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${corsOrigin}/app/invoices?payment=cancelled`,
+        success_url: `${appUrl}/app/invoices?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${appUrl}/app/invoices?payment=cancelled`,
         metadata: { invoiceId, invoiceNo: invoice.invoiceNo, accountId: aid },
         customer_email: recipientEmail,
       });
@@ -215,7 +213,7 @@ export class InvoicesService {
     });
 
     if (!paymentLink) {
-      const corsOrigin = Array.isArray(config.corsOrigin) ? config.corsOrigin[0] : config.corsOrigin;
+      const appUrl = process.env.CORS_ORIGIN || 'https://sparkly-kohl.vercel.app';
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -233,8 +231,8 @@ export class InvoicesService {
           },
         ],
         mode: 'payment',
-        success_url: `${corsOrigin}/app/invoices?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${corsOrigin}/app/invoices?payment=cancelled`,
+        success_url: `${appUrl}/app/invoices?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${appUrl}/app/invoices?payment=cancelled`,
         metadata: { invoiceId, invoiceNo: invoice.invoiceNo, accountId: aid },
       });
 
