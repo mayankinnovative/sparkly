@@ -198,6 +198,64 @@ export class InvoicesService {
     return paymentLink;
   }
 
+  /** Create (or return existing) Stripe checkout session — no email sent */
+  async generatePaymentLink(accountId: string | null, invoiceId: string) {
+    const invoice = await prisma.invoice.findFirst({
+      where: { id: invoiceId, ...tenantFilter(accountId) },
+      include: { customer: true },
+    });
+    if (!invoice) throw new AppError(404, 'Invoice not found', 'NOT_FOUND');
+    if (invoice.status === 'paid') throw new AppError(400, 'Invoice already paid', 'ALREADY_PAID');
+    if (invoice.status === 'cancelled') throw new AppError(400, 'Invoice is cancelled', 'INVOICE_CANCELLED');
+
+    const aid = invoice.accountId;
+
+    let paymentLink = await prisma.paymentLink.findFirst({
+      where: { invoiceId, status: 'pending' },
+    });
+
+    if (!paymentLink) {
+      const corsOrigin = Array.isArray(config.corsOrigin) ? config.corsOrigin[0] : config.corsOrigin;
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'cad',
+              product_data: {
+                name: `Invoice ${invoice.invoiceNo}`,
+                description: `Payment for ${invoice.customer.name}`,
+              },
+              unit_amount: Math.round(invoice.total.toNumber() * 100),
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${corsOrigin}/app/invoices?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${corsOrigin}/app/invoices?payment=cancelled`,
+        metadata: { invoiceId, invoiceNo: invoice.invoiceNo, accountId: aid },
+      });
+
+      paymentLink = await prisma.paymentLink.create({
+        data: {
+          invoiceId,
+          stripeSessionId: session.id,
+          url: session.url!,
+          status: 'pending',
+        },
+      });
+
+      await prisma.invoice.update({
+        where: { id: invoiceId },
+        data: { status: 'sent' },
+      });
+    }
+
+    return paymentLink;
+  }
+
   /** Called by Stripe webhook on checkout.session.completed */
   async handlePaymentSuccess(sessionId: string) {
     // Try by session ID first, fall back to invoiceId from metadata

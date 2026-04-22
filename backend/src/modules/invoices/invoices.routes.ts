@@ -94,6 +94,16 @@ router.put('/:id', validate(updateInvoiceSchema), async (req, res) => {
   }
 });
 
+router.post('/:id/generate-link', requireRole('account_owner'), async (req, res) => {
+  try {
+    const link = await invoicesService.generatePaymentLink(req.user!.accountId, req.params.id as string);
+    res.status(201).json(successResponse(link));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
 router.post('/:id/payment-link', requireRole('account_owner'), async (req, res) => {
   try {
     const { email } = z.object({ email: z.string().email('Invalid email address') }).parse(req.body);

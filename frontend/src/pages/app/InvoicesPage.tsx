@@ -303,9 +303,27 @@ export function InvoicesPage() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [sendLinkInvoice, setSendLinkInvoice] = useState<Invoice | null>(null);
   const [paymentBanner, setPaymentBanner] = useState<'success' | 'cancelled' | null>(null);
+  const [generatingLinkId, setGeneratingLinkId] = useState<string | null>(null);
 
   const refreshInvoices = () => {
     api.get('/invoices').then(({ data }) => setInvoices(data.data)).catch(console.error);
+  };
+
+  const handleOpenLink = async (inv: Invoice) => {
+    if (inv.paymentLink?.url) {
+      window.open(inv.paymentLink.url, '_blank');
+      return;
+    }
+    setGeneratingLinkId(inv.id);
+    try {
+      const { data } = await api.post(`/invoices/${inv.id}/generate-link`);
+      refreshInvoices();
+      if (data.data?.url) window.open(data.data.url, '_blank');
+    } catch {
+      // refreshInvoices will still update list
+    } finally {
+      setGeneratingLinkId(null);
+    }
   };
 
   // Handle Stripe redirect: ?payment=success&session_id=xxx OR ?payment=cancelled
@@ -423,21 +441,24 @@ export function InvoicesPage() {
                       <Button size="sm" variant="outline" onClick={() => setSelectedInvoiceId(inv.id)}>
                         <Eye className="h-3 w-3 mr-1" /> {t('viewDetails', lang)}
                       </Button>
-                      {inv.paymentLink?.url ? (
+                      {inv.status !== 'paid' && inv.status !== 'cancelled' && (
                         <>
-                          <a href={inv.paymentLink.url} target="_blank" rel="noopener noreferrer"
-                            className="text-sparkly-blue hover:underline flex items-center gap-1 text-sm">
-                            <ExternalLink className="h-3 w-3" /> {t('openStripeLink', lang)}
-                          </a>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1"
+                            disabled={generatingLinkId === inv.id}
+                            onClick={() => handleOpenLink(inv)}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            {generatingLinkId === inv.id ? t('loading', lang) : t('openStripeLink', lang)}
+                          </Button>
                           <Button size="sm" variant="outline" onClick={() => setSendLinkInvoice(inv)} className="gap-1">
-                            <Send className="h-3 w-3" /> {t('resendLink', lang)}
+                            <Send className="h-3 w-3" />
+                            {inv.paymentLink?.url ? t('resendLink', lang) : t('sendPaymentLink', lang)}
                           </Button>
                         </>
-                      ) : inv.status !== 'paid' && inv.status !== 'cancelled' ? (
-                        <Button size="sm" variant="outline" onClick={() => setSendLinkInvoice(inv)} className="gap-1">
-                          <Send className="h-3 w-3" /> {t('sendPaymentLink', lang)}
-                        </Button>
-                      ) : null}
+                      )}
                     </div>
                   </td>
                 </tr>
