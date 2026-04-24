@@ -9,7 +9,7 @@ import { t } from '@/lib/i18n';
 import api from '@/lib/api';
 import { formatDateTz } from '@/lib/timezone';
 import type { PayrollEntry, Language, User } from '@/types';
-import { DollarSign, Lock, Calculator, Plus, AlertCircle, X } from 'lucide-react';
+import { DollarSign, Lock, Calculator, Plus, AlertCircle, X, ShieldAlert } from 'lucide-react';
 
 interface RemittanceSummary {
   totalGross: number;
@@ -86,7 +86,7 @@ export function PayrollPage() {
 
   const reload = () => {
     if (!hasAccess) { setLoading(false); return; }
-    if (isSuperAdmin && !selectedAccountId) return;
+    if (isSuperAdmin && !selectedAccountId) { setLoading(false); return; }
     setLoading(true);
     const now = new Date();
     const from = `${formatDateTz(now, 'yyyy')}-01-01T00:00:00.000Z`;
@@ -243,7 +243,14 @@ export function PayrollPage() {
       )}
 
       {/* Pay stubs */}
-      {loading ? (
+      {isSuperAdmin && !selectedAccountId ? (
+        <Card>
+          <CardContent className="p-12 text-center text-gray-500">
+            <ShieldAlert className="h-10 w-10 mx-auto mb-3 text-gray-300" />
+            Select an account from the Super Admin panel to view payroll data.
+          </CardContent>
+        </Card>
+      ) : loading ? (
         <p className="text-center text-gray-500 py-8">{t('loading', lang)}</p>
       ) : entries.length === 0 ? (
         <Card>

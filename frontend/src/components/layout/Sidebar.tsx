@@ -24,7 +24,7 @@ const navItems: NavItem[] = [
   { label: 'expenses', path: '/app/log-expense', icon: Receipt },
   { label: 'invoices', path: '/app/invoices', icon: FileText },
   { label: 'paymentLinks', path: '/app/payment-links', icon: Link2 },
-  { label: 'payroll', path: '/app/payroll', icon: DollarSign, requiredPlan: 'business' },
+  { label: 'payroll', path: '/app/payroll', icon: DollarSign, requiredPlan: 'pro' },
   { label: 'taxFiling', path: '/app/tax-filing', icon: Calculator },
   { label: 'revenueReport', path: '/app/revenue-report', icon: BarChart3 },
   { label: 'pricing', path: '/app/pricing', icon: CreditCard },
