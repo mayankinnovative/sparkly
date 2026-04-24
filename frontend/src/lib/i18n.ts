@@ -63,7 +63,7 @@ const translations = {
     workersComp: 'Workers\' Comp',
     remittanceSummary: 'Remittance Summary',
     employee: 'Employee',
-    payrollRequiresBusiness: 'Payroll requires the Business plan.',
+    payrollRequiresBusiness: 'Payroll requires the Pro plan or above.',
     // Tax
     gst: 'TPS/GST (5%)',
     qst: 'TVQ/QST (9.975%)',
@@ -288,7 +288,7 @@ const translations = {
     workersComp: 'Acc. du travail',
     remittanceSummary: 'Sommaire des remises',
     employee: 'Employé',
-    payrollRequiresBusiness: 'La paie nécessite le forfait Affaires.',
+    payrollRequiresBusiness: 'La paie nécessite le forfait Pro ou supérieur.',
     gst: 'TPS (5%)',
     qst: 'TVQ (9,975%)',
     hst: 'TVH (13%)',

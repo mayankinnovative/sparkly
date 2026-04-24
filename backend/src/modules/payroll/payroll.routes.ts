@@ -47,7 +47,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-router.post('/', requireRole('account_owner', 'accountant'), validate(createPayrollEntrySchema), async (req, res) => {
+router.post('/', requireRole('account_owner'), validate(createPayrollEntrySchema), async (req, res) => {
   try {
     const entry = await payrollService.create(req.user!.accountId, req.body);
     res.status(201).json(successResponse(entry));
@@ -68,7 +68,7 @@ router.post('/preview', validate(calculatePayrollSchema), async (req, res) => {
   }
 });
 
-router.put('/:id', requireRole('account_owner', 'accountant'), validate(updatePayrollEntrySchema), async (req, res) => {
+router.put('/:id', requireRole('account_owner'), validate(updatePayrollEntrySchema), async (req, res) => {
   try {
     const entry = await payrollService.update(req.user!.accountId, req.params.id as string, req.body);
     res.json(successResponse(entry));

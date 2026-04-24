@@ -110,6 +110,14 @@ export interface Expense {
 export interface PayrollEntry {
   id: string;
   userId: string;
+  payType?: string;
+  hours: number;
+  hourlyRate: number;
+  bonus: number;
+  flatPay: number;
+  taxableBenefits: number;
+  vacationRate: number;
+  holidayPay: number;
   grossPay: number;
   federalTax: number;
   provincialTax: number;
@@ -119,8 +127,13 @@ export interface PayrollEntry {
   qpip: number;
   totalDeductions: number;
   netPay: number;
+  workersCompAmount: number;
+  employerCosts: number;
+  isInformationalOnly: boolean;
   province: string;
-  user?: { id: string; fullName: string };
+  payPeriodStart: string;
+  payPeriodEnd: string;
+  user?: { id: string; fullName: string; role?: string };
 }
 
 export interface DashboardOverview {

@@ -88,7 +88,12 @@ async function loadTaxConfig(province: string, year: number): Promise<TaxConfig>
       where: { province: province as any, taxYear: year },
     });
     if (config && config.rates) {
-      return config.rates as unknown as TaxConfig;
+      const r = config.rates as any;
+      // Validate the stored rates have the required shape; otherwise fall back.
+      if (Array.isArray(r.federalBrackets) && Array.isArray(r.provincialBrackets)) {
+        return r as TaxConfig;
+      }
+      logger.warn({ province, year }, 'Stored tax_configs.rates is missing brackets, using fallback');
     }
   } catch (err) {
     logger.warn({ province, year, err }, 'Failed to load tax config from DB, using fallback');
