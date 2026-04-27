@@ -98,33 +98,45 @@ export class JobsService {
     const job = await prisma.job.findFirst({ where: { id, accountId: aid } });
     if (!job) throw new AppError(404, 'Job not found', 'NOT_FOUND');
 
+    // Idempotency: if already completed, do not regenerate the invoice.
+    const wasAlreadyCompleted = job.status === 'completed';
+
     const updatedJob = await prisma.job.update({
       where: { id },
       data: {
         status: 'completed',
-        completedAt: new Date(),
+        completedAt: job.completedAt || new Date(),
       },
     });
 
-    // Auto-generate invoice if job has a customer
-    if (job.customerId) {
+    // Auto-generate invoice if job has a customer AND none exists yet for this job
+    if (job.customerId && !wasAlreadyCompleted) {
       try {
-        const account = await prisma.account.findUnique({ where: { id: aid } });
-        const taxType = account?.province === 'ON' ? 'HST' : 'GST_QST';
-        const dueDate = new Date();
-        dueDate.setDate(dueDate.getDate() + 30);
+        // Tax type is determined by the CUSTOMER location (the property being serviced),
+        // NOT the account owner's province (per Canadian PST/HST point-of-supply rules).
+        const customer = await prisma.customer.findUnique({ where: { id: job.customerId } });
+        const taxType = customer?.customerType === 'ON' ? 'HST' : 'GST_QST';
 
-        await invoicesService.create(
-          accountId,
-          {
-            customerId: job.customerId,
-            jobIds: [job.id],
-            dueDate: dueDate.toISOString(),
-            taxType: taxType as 'GST_QST' | 'HST',
-            language: 'en',
-          },
-          timezone,
-        );
+        // Idempotency: an invoice with sourceJobId === job.id already exists?
+        const existing = await prisma.invoice.findUnique({ where: { sourceJobId: job.id } });
+
+        if (!existing) {
+          const dueDate = new Date();
+          dueDate.setDate(dueDate.getDate() + 30);
+
+          await invoicesService.create(
+            accountId,
+            {
+              customerId: job.customerId,
+              jobIds: [job.id],
+              dueDate: dueDate.toISOString(),
+              taxType: taxType as 'GST_QST' | 'HST',
+              language: 'en',
+              sourceJobId: job.id,
+            },
+            timezone,
+          );
+        }
       } catch {
         // Invoice generation failure should not block job completion
       }

@@ -57,6 +57,12 @@ export class InvoicesService {
     });
     if (!customer) throw new AppError(404, 'Customer not found', 'CUSTOMER_NOT_FOUND');
 
+    // Idempotency: if a sourceJobId is supplied and already linked to an invoice, return it instead.
+    if (input.sourceJobId) {
+      const existing = await prisma.invoice.findUnique({ where: { sourceJobId: input.sourceJobId } });
+      if (existing) return existing;
+    }
+
     // Fetch jobs and calculate subtotal
     const jobs = await prisma.job.findMany({
       where: { id: { in: input.jobIds }, accountId: aid },
@@ -66,7 +72,12 @@ export class InvoicesService {
     }
 
     const subtotal = jobs.reduce((sum: number, j) => sum + j.price.toNumber(), 0);
-    const rates = TAX_RATES[input.taxType];
+    // If client did not supply a tax type, derive from the customer's location.
+    // Cleaning services follow Canadian point-of-supply rules — tax is based on
+    // where the property is located, not where the business owner is registered.
+    const taxType: 'GST_QST' | 'HST' =
+      input.taxType || (customer.customerType === 'ON' ? 'HST' : 'GST_QST');
+    const rates = TAX_RATES[taxType];
     const gstAmount = Math.round(subtotal * rates.gst * 100) / 100;
     const qstAmount = Math.round(subtotal * rates.qst * 100) / 100;
     const hstAmount = Math.round(subtotal * rates.hst * 100) / 100;
@@ -74,7 +85,7 @@ export class InvoicesService {
     const total = Math.round((subtotal + taxAmount) * 100) / 100;
 
     // Build tax breakdown based on tax type
-    const taxBreakdown = input.taxType === 'GST_QST'
+    const taxBreakdown = taxType === 'GST_QST'
       ? { gst: gstAmount, qst: qstAmount }
       : { hst: hstAmount };
 
@@ -90,12 +101,13 @@ export class InvoicesService {
       data: {
         accountId: aid,
         customerId: input.customerId,
+        sourceJobId: input.sourceJobId ?? null,
         invoiceNo: generateInvoiceNumber(),
         lineItems,
         subtotal,
         taxAmount,
         total,
-        taxType: input.taxType,
+        taxType,
         taxBreakdown,
         issuedDate: todayInTimezone(timezone || 'UTC'),
         dueDate: new Date(input.dueDate),

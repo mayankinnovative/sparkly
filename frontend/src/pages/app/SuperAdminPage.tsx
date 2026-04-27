@@ -209,6 +209,16 @@ function UsersTenantsTab() {
     finally { setActionLoading(false); setTimeout(() => setFeedback(null), 3000); }
   };
 
+  const handleChangeProvince = async (accountId: string, province: string) => {
+    setActionLoading(true);
+    try {
+      await api.patch(`/admin/accounts/${accountId}/province`, { province });
+      setFeedback(`Province changed to ${province}`);
+      fetchAccounts(page);
+    } catch (err) { console.error(err); }
+    finally { setActionLoading(false); setTimeout(() => setFeedback(null), 3000); }
+  };
+
   const handleResetPassword = async () => {
     if (!resetPwUserId || newPassword.length < 8) return;
     setActionLoading(true);
@@ -287,6 +297,16 @@ function UsersTenantsTab() {
                         <option value="solo">Solo</option>
                         <option value="pro">Pro</option>
                         <option value="business">Business</option>
+                      </select>
+                      <select
+                        className="text-xs border rounded px-1 py-0.5"
+                        defaultValue=""
+                        onChange={(e) => { if (e.target.value) handleChangeProvince(acc.id, e.target.value); e.target.value = ''; }}
+                        title="Change province"
+                      >
+                        <option value="" disabled>Prov...</option>
+                        <option value="QC">QC</option>
+                        <option value="ON">ON</option>
                       </select>
                     </div>
                   </td>
@@ -463,8 +483,15 @@ function SettingsPromosTab() {
   const [soloPrice, setSoloPrice] = useState('19');
   const [proPrice, setProPrice] = useState('29');
   const [businessPrice, setBusinessPrice] = useState('49');
+  const [trialDays, setTrialDays] = useState('30');
   const [priceSaving, setPriceSaving] = useState(false);
+  const [trialSaving, setTrialSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  // Change requests
+  const [changeRequests, setChangeRequests] = useState<any[]>([]);
+  const [crLoading, setCrLoading] = useState(false);
+  const [reviewing, setReviewing] = useState<string | null>(null);
 
   const fetchData = () => {
     setLoading(true);
@@ -482,12 +509,25 @@ function SettingsPromosTab() {
           setProPrice(String(pricing.value.pro || 29));
           setBusinessPrice(String(pricing.value.business || 49));
         }
+        const trial = allSettings.find((st: any) => st.key === 'trial_days');
+        if (trial?.value !== undefined && trial?.value !== null) {
+          const v = typeof trial.value === 'number' ? trial.value : (trial.value?.days ?? 30);
+          setTrialDays(String(v));
+        }
       })
       .catch(console.error)
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchData(); }, []);
+  const fetchChangeRequests = () => {
+    setCrLoading(true);
+    api.get('/admin/change-requests')
+      .then(({ data }) => setChangeRequests(data.data || []))
+      .catch(console.error)
+      .finally(() => setCrLoading(false));
+  };
+
+  useEffect(() => { fetchData(); fetchChangeRequests(); }, []);
 
   const handleCreateCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -563,6 +603,34 @@ function SettingsPromosTab() {
     finally { setPriceSaving(false); }
   };
 
+  const handleSaveTrial = async () => {
+    const days = parseInt(trialDays, 10);
+    if (!Number.isFinite(days) || days < 0 || days > 365) {
+      setFeedback('Trial days must be between 0 and 365.');
+      setTimeout(() => setFeedback(null), 3000);
+      return;
+    }
+    setTrialSaving(true);
+    try {
+      await api.put('/admin/settings/trial_days', { value: days });
+      setFeedback(`Free trial set to ${days} days. New signups will get this trial length.`);
+      setTimeout(() => setFeedback(null), 4000);
+      fetchData();
+    } catch (err) { console.error(err); }
+    finally { setTrialSaving(false); }
+  };
+
+  const handleReviewRequest = async (id: string, decision: 'approved' | 'rejected') => {
+    setReviewing(id);
+    try {
+      await api.post(`/admin/change-requests/${id}/review`, { decision });
+      setFeedback(`Request ${decision}`);
+      setTimeout(() => setFeedback(null), 3000);
+      fetchChangeRequests();
+    } catch (err) { console.error(err); }
+    finally { setReviewing(null); }
+  };
+
   if (loading) return <LoadingState />;
 
   return (
@@ -595,6 +663,96 @@ function SettingsPromosTab() {
             {priceSaving && <Loader2 className="h-4 w-4 animate-spin" />}
             Save Pricing
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Free Trial Duration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5" /> Free Trial Duration</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-end gap-3 max-w-md">
+            <div className="flex-1 space-y-2">
+              <Label>Free trial length (days)</Label>
+              <Input
+                type="number"
+                min="0"
+                max="365"
+                step="1"
+                value={trialDays}
+                onChange={(e) => setTrialDays(e.target.value)}
+              />
+              <p className="text-xs text-gray-500">
+                Number of days new sign-ups get free access on the Solo plan before billing starts.
+                Use 30 for one month, 14 for two weeks, 0 to disable the trial.
+              </p>
+            </div>
+            <Button onClick={handleSaveTrial} disabled={trialSaving}>
+              {trialSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save Trial
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Change Requests */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5" /> Account Change Requests
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {crLoading ? (
+            <p className="text-sm text-gray-500">Loading…</p>
+          ) : changeRequests.length === 0 ? (
+            <p className="text-sm text-gray-500">No change requests submitted yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {changeRequests.map((r) => (
+                <div key={r.id} className="flex items-center justify-between p-3 bg-white border rounded-lg">
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={r.status === 'pending' ? 'info' : r.status === 'approved' ? 'success' : 'destructive'} className="capitalize">
+                        {r.status}
+                      </Badge>
+                      <span className="text-sm font-medium">{r.account?.name || 'Unknown account'}</span>
+                      <span className="text-xs text-gray-500">
+                        {r.requestType.replace(/_/g, ' ')}: {r.currentValue || '—'} → <strong>{r.requestedValue}</strong>
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Requested by {r.requestedByUser?.firstName} {r.requestedByUser?.lastName} ({r.requestedByUser?.email}) on {formatDateTz(r.createdAt, 'MMM d, yyyy')}
+                      {r.reason && <> · Reason: <em>{r.reason}</em></>}
+                    </p>
+                  </div>
+                  {r.status === 'pending' && (
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-emerald-600 border-emerald-300"
+                        disabled={reviewing === r.id}
+                        onClick={() => handleReviewRequest(r.id, 'approved')}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 border-red-300"
+                        disabled={reviewing === r.id}
+                        onClick={() => handleReviewRequest(r.id, 'rejected')}
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

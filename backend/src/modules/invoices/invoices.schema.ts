@@ -4,9 +4,11 @@ export const createInvoiceSchema = z.object({
   customerId: z.string().uuid(),
   jobIds: z.array(z.string().uuid()).min(1),
   dueDate: z.string().datetime(),
-  taxType: z.enum(['GST_QST', 'HST']),
+  // taxType is optional — if omitted, derived from customer.customerType (location of supply).
+  taxType: z.enum(['GST_QST', 'HST']).optional(),
   language: z.enum(['en', 'fr']).default('en'),
   notes: z.string().max(2000).optional().nullable(),
+  sourceJobId: z.string().uuid().optional(),
 });
 
 export const updateInvoiceSchema = z.object({

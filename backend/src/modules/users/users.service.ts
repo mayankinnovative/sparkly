@@ -5,7 +5,7 @@ import { CreateUserInput, UpdateUserInput, UpdateMeInput } from './users.schema'
 
 export class UsersService {
   async list(accountId: string | null) {
-    return prisma.user.findMany({
+    const users = await prisma.user.findMany({
       where: { ...tenantFilter(accountId) },
       select: {
         id: true,
@@ -19,6 +19,10 @@ export class UsersService {
       },
       orderBy: { createdAt: 'desc' },
     });
+    return users.map((u) => ({
+      ...u,
+      fullName: `${u.firstName} ${u.lastName}`.trim(),
+    }));
   }
 
   async getById(accountId: string | null, userId: string) {

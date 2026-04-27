@@ -63,12 +63,21 @@ app.get('/api/v1/health', async (_req, res) => {
 
 // ─── Public pricing endpoint ────────────────────────────────────────────────
 app.get('/api/v1/pricing', async (_req, res) => {
+  const defaultPrices = { solo: 19, pro: 29, business: 49 };
+  const defaultTrial = 30;
   try {
-    const setting = await prisma.platformSetting.findUnique({ where: { key: 'pricing' } });
-    const defaults = { solo: 19, pro: 29, business: 49 };
-    res.json({ success: true, data: (setting?.value as Record<string, number>) || defaults });
+    const [pricingSetting, trialSetting] = await Promise.all([
+      prisma.platformSetting.findUnique({ where: { key: 'pricing' } }),
+      prisma.platformSetting.findUnique({ where: { key: 'trial_days' } }),
+    ]);
+    const prices = (pricingSetting?.value as Record<string, number>) || defaultPrices;
+    const trialRaw: any = trialSetting?.value;
+    const trialDays = typeof trialRaw === 'number'
+      ? trialRaw
+      : (trialRaw && typeof trialRaw.days === 'number' ? trialRaw.days : defaultTrial);
+    res.json({ success: true, data: { ...prices, trialDays } });
   } catch {
-    res.json({ success: true, data: { solo: 19, pro: 29, business: 49 } });
+    res.json({ success: true, data: { ...defaultPrices, trialDays: defaultTrial } });
   }
 });
 

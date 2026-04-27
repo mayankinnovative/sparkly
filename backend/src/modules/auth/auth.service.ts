@@ -25,6 +25,17 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(input.password, 10);
 
+    // Trial duration is configurable by Super Admin via PlatformSetting key 'trial_days'.
+    let trialDays = 30;
+    try {
+      const setting = await prisma.platformSetting.findUnique({ where: { key: 'trial_days' } });
+      const raw: any = setting?.value;
+      if (typeof raw === 'number') trialDays = raw;
+      else if (raw && typeof raw.days === 'number') trialDays = raw.days;
+    } catch {
+      // fall back to default
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       const account = await tx.account.create({
         data: {
@@ -52,7 +63,7 @@ export class AuthService {
           plan: 'solo',
           status: 'trialing',
           startDate: new Date(),
-          trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          trialEndsAt: new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000),
         },
       });
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useAuthStore } from '@/store/auth';
 import api from '@/lib/api';
 import { Sparkles, Loader2 } from 'lucide-react';
+
+interface PricingInfo {
+  solo: number;
+  pro: number;
+  business: number;
+  trialDays: number;
+}
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -18,10 +25,20 @@ export function RegisterPage() {
     password: '',
     businessName: '',
     province: 'QC' as 'QC' | 'ON',
-    plan: 'pro' as 'solo' | 'pro' | 'business',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pricing, setPricing] = useState<PricingInfo>({ solo: 19, pro: 29, business: 49, trialDays: 30 });
+
+  useEffect(() => {
+    api.get('/pricing')
+      .then(({ data }) => {
+        if (data?.data) setPricing(data.data);
+      })
+      .catch(() => {
+        // keep defaults
+      });
+  }, []);
 
   const update = (field: string, value: string) => setForm((f) => ({ ...f, [field]: value }));
 
@@ -64,7 +81,7 @@ export function RegisterPage() {
             <span className="text-2xl font-bold gradient-text">Sparkly</span>
           </Link>
           <CardTitle>Create your account</CardTitle>
-          <CardDescription>Start your 14-day free trial</CardDescription>
+          <CardDescription>Start your {pricing.trialDays}-day free trial — no credit card required</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -128,31 +145,31 @@ export function RegisterPage() {
                 required
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Province</Label>
-                <select
-                  value={form.province}
-                  onChange={(e) => update('province', e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="QC">Quebec (QC)</option>
-                  <option value="ON">Ontario (ON)</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label>Plan</Label>
-                <select
-                  value={form.plan}
-                  onChange={(e) => update('plan', e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="solo">Solo ($29/mo)</option>
-                  <option value="pro">Pro ($49/mo)</option>
-                  <option value="business">Business ($99/mo)</option>
-                </select>
-              </div>
+            <div className="space-y-2">
+              <Label>Province</Label>
+              <select
+                value={form.province}
+                onChange={(e) => update('province', e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="QC">Quebec (QC)</option>
+                <option value="ON">Ontario (ON)</option>
+              </select>
+              <p className="text-xs text-gray-500">
+                Province cannot be changed later from your account. To change it, you'll need to send a request to the administrator.
+              </p>
             </div>
+
+            <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800 space-y-1">
+              <p className="font-semibold">Plans available after your free trial:</p>
+              <ul className="space-y-0.5">
+                <li>Solo — ${pricing.solo}/month</li>
+                <li>Pro — ${pricing.pro}/month</li>
+                <li>Business — ${pricing.business}/month</li>
+              </ul>
+              <p className="pt-1">All new accounts start on the Solo plan with a {pricing.trialDays}-day free trial.</p>
+            </div>
+
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               Create Account

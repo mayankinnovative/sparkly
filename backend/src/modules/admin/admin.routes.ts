@@ -277,4 +277,48 @@ router.get('/subscription-payments', async (req, res) => {
   }
 });
 
+// Change account province (e.g. user moved provinces)
+router.patch('/accounts/:id/province', async (req, res) => {
+  try {
+    const { userId } = (req as AuthenticatedRequest).user!;
+    const { province, notes } = req.body;
+    if (!['QC', 'ON'].includes(province)) {
+      return res.status(400).json(errorResponse('province must be "QC" or "ON"', 'INVALID_PROVINCE'));
+    }
+    const updated = await adminService.changeProvince(userId, req.params.id, province, notes);
+    res.json(successResponse(updated, 'Province updated'));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
+// Change requests — list + review
+router.get('/change-requests', async (req, res) => {
+  try {
+    const { userId } = (req as AuthenticatedRequest).user!;
+    const status = req.query.status as string | undefined;
+    const data = await adminService.listChangeRequests(userId, status);
+    res.json(successResponse(data));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
+router.post('/change-requests/:id/review', async (req, res) => {
+  try {
+    const { userId } = (req as AuthenticatedRequest).user!;
+    const { decision, reviewNotes } = req.body;
+    if (!['approved', 'rejected'].includes(decision)) {
+      return res.status(400).json(errorResponse('decision must be "approved" or "rejected"', 'INVALID_DECISION'));
+    }
+    const updated = await adminService.reviewChangeRequest(userId, req.params.id, decision, reviewNotes);
+    res.json(successResponse(updated, `Change request ${decision}`));
+  } catch (err: any) {
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
 export default router;

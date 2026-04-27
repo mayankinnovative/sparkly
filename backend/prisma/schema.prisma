@@ -285,6 +285,7 @@ model Invoice {
   id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   accountId  String        @map("account_id") @db.Uuid
   customerId String        @map("customer_id") @db.Uuid
+  sourceJobId String?      @unique @map("source_job_id") @db.Uuid
   lineItems  Json          @map("line_items")
   subtotal     Decimal       @db.Decimal(12, 2)
   taxAmount    Decimal       @map("tax_amount") @db.Decimal(12, 2)
@@ -418,4 +419,24 @@ model PlatformSetting {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("platform_settings")
+}
+
+model ChangeRequest {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId    String   @map("account_id") @db.Uuid
+  requestedBy  String   @map("requested_by") @db.Uuid
+  requestType  String   @map("request_type") @db.VarChar(50) // e.g. "province_change"
+  currentValue String?  @map("current_value") @db.VarChar(100)
+  requestedValue String @map("requested_value") @db.VarChar(100)
+  reason       String?  @db.Text
+  status       String   @default("pending") @db.VarChar(20) // pending | approved | rejected
+  reviewedBy   String?  @map("reviewed_by") @db.Uuid
+  reviewedAt   DateTime? @map("reviewed_at")
+  reviewNotes  String?  @map("review_notes") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([status, createdAt])
+  @@index([accountId])
+  @@map("change_requests")
 }

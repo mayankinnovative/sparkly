@@ -5,7 +5,8 @@ import { tenantScope } from '../../middleware/tenantScope';
 import { validate } from '../../middleware/validate';
 import { usersService } from './users.service';
 import { createUserSchema, updateUserSchema, updateMeSchema } from './users.schema';
-import { successResponse } from '../../utils/response';
+import { successResponse, errorResponse } from '../../utils/response';
+import prisma from '../../config/database';
 
 const router = Router();
 
@@ -81,5 +82,66 @@ router.delete(
     } catch (error) { next(error); }
   }
 );
+
+// ─── Change Requests (non-admin) ────────────────────────────────────────────
+// Account owners can submit a change request (e.g. province change).
+// Staff/accountants cannot — they should ask the account owner.
+router.get('/me/change-requests', async (req: Request, res: Response) => {
+  try {
+    const requests = await prisma.changeRequest.findMany({
+      where: { accountId: req.user!.accountId || undefined },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+    res.json(successResponse(requests));
+  } catch (err: any) {
+    res.status(err.statusCode || 500).json(errorResponse(err.message, err.code));
+  }
+});
+
+router.post('/me/change-requests', requireRole('account_owner'), async (req: Request, res: Response) => {
+  try {
+    const { requestType, requestedValue, reason } = req.body;
+    if (!requestType || !requestedValue) {
+      return res.status(400).json(errorResponse('requestType and requestedValue are required', 'MISSING_PARAMS'));
+    }
+    if (requestType === 'province_change' && !['QC', 'ON'].includes(requestedValue)) {
+      return res.status(400).json(errorResponse('requestedValue must be "QC" or "ON" for province_change', 'INVALID_PROVINCE'));
+    }
+    const accountId = req.user!.accountId;
+    if (!accountId) {
+      return res.status(400).json(errorResponse('No account context', 'NO_ACCOUNT'));
+    }
+
+    // Reject if there's already a pending request of the same type for this account
+    const existing = await prisma.changeRequest.findFirst({
+      where: { accountId, requestType, status: 'pending' },
+    });
+    if (existing) {
+      return res.status(409).json(errorResponse('A pending request of this type already exists', 'PENDING_EXISTS'));
+    }
+
+    let currentValue: string | null = null;
+    if (requestType === 'province_change') {
+      const account = await prisma.account.findUnique({ where: { id: accountId } });
+      currentValue = account?.province || null;
+    }
+
+    const created = await prisma.changeRequest.create({
+      data: {
+        accountId,
+        requestedBy: req.user!.userId,
+        requestType,
+        currentValue,
+        requestedValue,
+        reason: reason || null,
+        status: 'pending',
+      },
+    });
+    res.status(201).json(successResponse(created, 'Change request submitted'));
+  } catch (err: any) {
+    res.status(err.statusCode || 500).json(errorResponse(err.message, err.code));
+  }
+});
 
 export default router;

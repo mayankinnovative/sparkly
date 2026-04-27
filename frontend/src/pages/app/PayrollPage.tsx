@@ -318,6 +318,13 @@ export function PayrollPage() {
                       <option key={s.id} value={s.id}>{s.fullName} ({s.role})</option>
                     ))}
                   </select>
+                  {staff.length === 0 && (
+                    <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                      No employees yet. Add a staff member from the Users API
+                      (POST&nbsp;/users) before creating a payroll entry — or run an estimate
+                      against the account owner once their record is loaded.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label>Pay Type</Label>
@@ -388,7 +395,7 @@ export function PayrollPage() {
                 <Button type="button" variant="ghost" onClick={() => setShowForm(false)} disabled={submitting}>
                   {t('cancel', lang)}
                 </Button>
-                <Button type="submit" disabled={submitting}>
+                <Button type="submit" disabled={submitting || !form.userId}>
                   {submitting ? t('loading', lang) : t('create', lang)}
                 </Button>
               </div>

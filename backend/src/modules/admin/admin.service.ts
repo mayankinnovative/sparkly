@@ -391,6 +391,97 @@ export class AdminService {
     await this.logAdminAction(adminUserId, 'view_subscription_payments', 'subscription', undefined, { page });
     return { subscriptions: enriched, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
   }
+
+  /** Admin: change an account's province (e.g. user moved provinces) */
+  async changeProvince(adminUserId: string, accountId: string, newProvince: 'QC' | 'ON', notes?: string) {
+    if (!['QC', 'ON'].includes(newProvince)) {
+      throw new AppError(400, 'Invalid province. Must be QC or ON', 'INVALID_PROVINCE');
+    }
+    const account = await prisma.account.findUnique({ where: { id: accountId } });
+    if (!account) throw new AppError(404, 'Account not found', 'NOT_FOUND');
+
+    const updated = await prisma.account.update({
+      where: { id: accountId },
+      data: { province: newProvince },
+    });
+
+    await this.logAdminAction(adminUserId, 'change_province', 'account', accountId, {
+      from: account.province,
+      to: newProvince,
+      notes: notes || null,
+    });
+    return updated;
+  }
+
+  /** Admin: list all change requests, optionally filtered by status */
+  async listChangeRequests(adminUserId: string, status?: string) {
+    const where: any = {};
+    if (status) where.status = status;
+    const requests = await prisma.changeRequest.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    const accountIds = Array.from(new Set(requests.map((r) => r.accountId)));
+    const userIds = Array.from(new Set(requests.map((r) => r.requestedBy)));
+    const [accounts, users] = await Promise.all([
+      prisma.account.findMany({ where: { id: { in: accountIds } }, select: { id: true, name: true, province: true } }),
+      prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, firstName: true, lastName: true, email: true } }),
+    ]);
+    const aMap = new Map(accounts.map((a) => [a.id, a]));
+    const uMap = new Map(users.map((u) => [u.id, u]));
+    const enriched = requests.map((r) => ({
+      ...r,
+      account: aMap.get(r.accountId) || null,
+      requestedByUser: uMap.get(r.requestedBy) || null,
+    }));
+    await this.logAdminAction(adminUserId, 'list_change_requests', 'change_request');
+    return enriched;
+  }
+
+  /** Admin: approve or reject a change request */
+  async reviewChangeRequest(
+    adminUserId: string,
+    requestId: string,
+    decision: 'approved' | 'rejected',
+    reviewNotes?: string,
+  ) {
+    if (!['approved', 'rejected'].includes(decision)) {
+      throw new AppError(400, 'decision must be "approved" or "rejected"', 'INVALID_DECISION');
+    }
+    const request = await prisma.changeRequest.findUnique({ where: { id: requestId } });
+    if (!request) throw new AppError(404, 'Change request not found', 'NOT_FOUND');
+    if (request.status !== 'pending') {
+      throw new AppError(400, 'Change request already reviewed', 'ALREADY_REVIEWED');
+    }
+
+    if (decision === 'approved' && request.requestType === 'province_change') {
+      if (!['QC', 'ON'].includes(request.requestedValue)) {
+        throw new AppError(400, 'Requested province is invalid', 'INVALID_PROVINCE');
+      }
+      await prisma.account.update({
+        where: { id: request.accountId },
+        data: { province: request.requestedValue as 'QC' | 'ON' },
+      });
+    }
+
+    const updated = await prisma.changeRequest.update({
+      where: { id: requestId },
+      data: {
+        status: decision,
+        reviewedBy: adminUserId,
+        reviewedAt: new Date(),
+        reviewNotes: reviewNotes || null,
+      },
+    });
+
+    await this.logAdminAction(adminUserId, `review_change_request_${decision}`, 'change_request', requestId, {
+      requestType: request.requestType,
+      from: request.currentValue,
+      to: request.requestedValue,
+    });
+    return updated;
+  }
 }
 
 export const adminService = new AdminService();
