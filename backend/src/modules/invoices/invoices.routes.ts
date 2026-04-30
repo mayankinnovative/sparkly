@@ -26,7 +26,14 @@ router.post('/webhook', async (req: Request, res: Response) => {
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
-      await invoicesService.handlePaymentSuccess(session.id);
+      // Subscription upgrade sessions are tagged via metadata; everything else
+      // is a customer invoice payment.
+      if (session.metadata?.purpose === 'subscription_upgrade') {
+        const { subscriptionsService } = await import('../subscriptions/subscriptions.service');
+        await subscriptionsService.handleUpgradeCompleted(session);
+      } else {
+        await invoicesService.handlePaymentSuccess(session.id);
+      }
     }
 
     res.json({ received: true });

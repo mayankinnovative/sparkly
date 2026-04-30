@@ -20,6 +20,7 @@ import invoicesRoutes from './modules/invoices/invoices.routes';
 import expensesRoutes from './modules/expenses/expenses.routes';
 import dashboardRoutes from './modules/dashboard/dashboard.routes';
 import adminRoutes from './modules/admin/admin.routes';
+import subscriptionsRoutes from './modules/subscriptions/subscriptions.routes';
 
 // Service imports (for cron)
 import { recurringJobsService } from './modules/recurring-jobs/recurring-jobs.service';
@@ -92,6 +93,7 @@ app.use('/api/v1/invoices', invoicesRoutes);
 app.use('/api/v1/expenses', expensesRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/subscriptions', subscriptionsRoutes);
 
 // ─── Cron endpoint for Vercel Cron Jobs ─────────────────────────────────────
 app.get('/api/v1/cron/recurring-jobs', async (req, res) => {
