@@ -8,7 +8,7 @@ import { t } from '@/lib/i18n';
 import api from '@/lib/api';
 import type { Invoice, Language, TaxBreakdown } from '@/types';
 import { formatDateTz } from '@/lib/timezone';
-import { FileText, ExternalLink, Eye, X, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { FileText, ExternalLink, Eye, X, Send, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const statusVariant: Record<string, 'info' | 'warning' | 'success' | 'destructive' | 'secondary'> = {
   draft: 'secondary',
@@ -304,6 +304,9 @@ export function InvoicesPage() {
   const [sendLinkInvoice, setSendLinkInvoice] = useState<Invoice | null>(null);
   const [paymentBanner, setPaymentBanner] = useState<'success' | 'cancelled' | null>(null);
   const [generatingLinkId, setGeneratingLinkId] = useState<string | null>(null);
+  const [filter, setFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   const refreshInvoices = () => {
     api.get('/invoices').then(({ data }) => setInvoices(data.data)).catch(console.error);
@@ -358,9 +361,32 @@ export function InvoicesPage() {
       .finally(() => setLoading(false));
   }, [selectedAccountId]);
 
+  // Reset page when filter changes
+  useEffect(() => { setPage(1); }, [filter]);
+
+  const filtered = invoices.filter((inv) => {
+    if (!filter) return true;
+    const q = filter.toLowerCase();
+    return (
+      inv.invoiceNo?.toLowerCase().includes(q) ||
+      inv.customer?.name?.toLowerCase().includes(q) ||
+      inv.status?.toLowerCase().includes(q)
+    );
+  });
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">{t('invoices', lang)}</h1>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h1 className="text-2xl font-bold">{t('invoices', lang)}</h1>
+        <Input
+          placeholder={t('search', lang)}
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="w-64"
+        />
+      </div>
 
       {/* Payment result banner */}
       {paymentBanner === 'success' && (
@@ -396,6 +422,7 @@ export function InvoicesPage() {
           </CardContent>
         </Card>
       ) : (
+        <>
         <div className="bg-white rounded-lg border overflow-hidden">
           <table className="w-full">
             <thead className="bg-gray-50">
@@ -411,7 +438,7 @@ export function InvoicesPage() {
               </tr>
             </thead>
             <tbody className="divide-y">
-              {invoices.map((inv) => (
+              {paginated.map((inv) => (
                 <tr key={inv.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm font-mono">{inv.invoiceNo}</td>
                   <td className="px-4 py-3 text-sm font-medium">{inv.customer?.name}</td>
@@ -466,6 +493,23 @@ export function InvoicesPage() {
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4">
+            <p className="text-sm text-gray-500">
+              Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of {filtered.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+                <ChevronLeft className="h-4 w-4" /> Previous
+              </Button>
+              <span className="text-sm font-medium">Page {page} of {totalPages}</span>
+              <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+                Next <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+        </>
       )}
 
       {selectedInvoiceId && (

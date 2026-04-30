@@ -27,7 +27,7 @@ export function CustomersPage() {
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(1);
-  const pageSize = 12;
+  const pageSize = 10;
 
   const showFeedback = (type: 'success' | 'error', message: string) => {
     setFeedback({ type, message });

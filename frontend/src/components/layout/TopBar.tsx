@@ -74,14 +74,25 @@ export function TopBar() {
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Province toggle */}
-        <button
-          onClick={toggleProvince}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border hover:bg-gray-50 text-sm transition-colors"
-        >
-          <MapPin className="h-4 w-4 text-gray-500" />
-          <span className="font-medium">{province}</span>
-        </button>
+        {/* Province indicator — toggleable for super admin (audit/preview), static for tenant users */}
+        {isSuperAdmin ? (
+          <button
+            onClick={toggleProvince}
+            title="Toggle province (admin only)"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border hover:bg-gray-50 text-sm transition-colors"
+          >
+            <MapPin className="h-4 w-4 text-gray-500" />
+            <span className="font-medium">{province}</span>
+          </button>
+        ) : (
+          <div
+            title="Province is set on signup. To change it, submit a request from Settings."
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border bg-gray-50 text-sm text-gray-600 cursor-default select-none"
+          >
+            <MapPin className="h-4 w-4 text-gray-500" />
+            <span className="font-medium">{province}</span>
+          </div>
+        )}
 
         {/* Language toggle */}
         <button

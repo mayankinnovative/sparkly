@@ -111,7 +111,15 @@ export class PayrollService {
       throw new AppError(400, 'Gross pay must be greater than zero', 'INVALID_GROSS');
     }
 
-    const deductions = await calculateDeductions(grossPay, input.province);
+    // Annualize using the actual pay-period length so deductions are realistic
+    // (instead of always assuming a biweekly period).
+    const startMs = new Date(input.payPeriodStart).getTime();
+    const endMs = new Date(input.payPeriodEnd).getTime();
+    const periodDays = Math.max(1, Math.round((endMs - startMs) / 86_400_000) + 1);
+    const periodsPerYear = Math.max(1, 365 / periodDays);
+    const annualizedGross = r2(grossPay * periodsPerYear);
+
+    const deductions = await calculateDeductions(grossPay, input.province, annualizedGross);
     // Employer-side costs (informational): workers comp + employer-matched CPP/QPP + EI 1.4x
     const employerCosts = r2(
       deductions.workersCompEstimate + deductions.cpp + deductions.qpp + deductions.ei * 1.4,
@@ -167,7 +175,12 @@ export class PayrollService {
       holidayPay: input.holidayPay ?? Number(entry.holidayPay),
     };
     const grossPay = computeGross(merged);
-    const deductions = await calculateDeductions(grossPay, entry.province as 'QC' | 'ON');
+    const startMs = new Date(entry.payPeriodStart).getTime();
+    const endMs = new Date(entry.payPeriodEnd).getTime();
+    const periodDays = Math.max(1, Math.round((endMs - startMs) / 86_400_000) + 1);
+    const periodsPerYear = Math.max(1, 365 / periodDays);
+    const annualizedGross = r2(grossPay * periodsPerYear);
+    const deductions = await calculateDeductions(grossPay, entry.province as 'QC' | 'ON', annualizedGross);
     const employerCosts = r2(
       deductions.workersCompEstimate + deductions.cpp + deductions.qpp + deductions.ei * 1.4,
     );
