@@ -1,8 +1,6 @@
 import prisma from '../../config/database';
 import { AppError } from '../../utils/response';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { config } from '../../config';
 
 export class AdminService {
   /** FR-ADM-04: Log every admin action (read and write) */
@@ -54,14 +52,24 @@ export class AdminService {
     return account;
   }
 
+  // FR-ADM-07: Deactivating a tenant prevents all current AND future users from logging in.
   async suspendAccount(superAdminId: string, accountId: string, reason: string) {
     const account = await prisma.account.findUnique({ where: { id: accountId } });
     if (!account) throw new AppError(404, 'Account not found', 'NOT_FOUND');
 
     await prisma.$transaction([
+      prisma.account.update({
+        where: { id: accountId },
+        data: { isActive: false },
+      }),
       prisma.user.updateMany({
         where: { accountId },
         data: { isActive: false },
+      }),
+      // Revoke all live refresh tokens so existing sessions are invalidated immediately.
+      prisma.refreshToken.updateMany({
+        where: { user: { accountId } },
+        data: { revoked: true },
       }),
       prisma.adminAction.create({
         data: {
@@ -80,6 +88,10 @@ export class AdminService {
     if (!account) throw new AppError(404, 'Account not found', 'NOT_FOUND');
 
     await prisma.$transaction([
+      prisma.account.update({
+        where: { id: accountId },
+        data: { isActive: true },
+      }),
       prisma.user.updateMany({
         where: { accountId },
         data: { isActive: true },
@@ -255,17 +267,8 @@ export class AdminService {
     await this.logAdminAction(adminUserId, 'reset_password', 'user', targetUserId);
   }
 
-  /** Login As: generate token to impersonate a user */
-  async loginAs(adminUserId: string, targetUserId: string) {
-    const user = await prisma.user.findUnique({ where: { id: targetUserId } });
-    if (!user) throw new AppError(404, 'User not found', 'NOT_FOUND');
-
-    const payload = { userId: user.id, accountId: user.accountId, role: user.role };
-    const accessToken = jwt.sign(payload, config.jwt.accessSecret, { expiresIn: '1h' });
-
-    await this.logAdminAction(adminUserId, 'login_as', 'user', targetUserId);
-    return { accessToken, user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role, accountId: user.accountId } };
-  }
+  // FR-ADM-06: Super Admin impersonation ("login as") is intentionally NOT implemented.
+  // The SRS explicitly forbids logging in as tenant users.
 
   /** Discount codes CRUD */
   async listDiscountCodes(adminUserId: string) {

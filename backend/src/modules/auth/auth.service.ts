@@ -108,6 +108,11 @@ export class AuthService {
       throw new AppError(403, 'Account deactivated', 'ACCOUNT_DEACTIVATED');
     }
 
+    // FR-ADM-07: Block login if the tenant account itself has been suspended by Super Admin.
+    if (user.account && user.account.isActive === false) {
+      throw new AppError(403, 'This business account has been suspended. Please contact support.', 'ACCOUNT_SUSPENDED');
+    }
+
     const passwordValid = await bcrypt.compare(input.password, user.passwordHash);
     if (!passwordValid) {
       throw new AppError(401, 'Invalid credentials', 'INVALID_CREDENTIALS');

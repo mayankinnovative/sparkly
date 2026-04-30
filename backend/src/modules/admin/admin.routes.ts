@@ -151,17 +151,8 @@ router.post('/users/:id/reset-password', async (req, res) => {
   }
 });
 
-// Login As (impersonation)
-router.post('/users/:id/login-as', async (req, res) => {
-  try {
-    const { userId } = (req as AuthenticatedRequest).user!;
-    const data = await adminService.loginAs(userId, req.params.id);
-    res.json(successResponse(data));
-  } catch (err: any) {
-    const status = err.statusCode || 500;
-    res.status(status).json(errorResponse(err.message, err.code));
-  }
-});
+// FR-ADM-06: Login-as / impersonation route is intentionally NOT exposed.
+// Super Admin must not be able to log in as a tenant user.
 
 // Discount codes
 router.get('/discount-codes', async (req, res) => {

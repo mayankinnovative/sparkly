@@ -12,7 +12,7 @@ import type { Language } from '@/types';
 import { formatDateTz } from '@/lib/timezone';
 import {
   LayoutDashboard, Users, CreditCard, Settings, Activity,
-  ChevronLeft, ChevronRight, Loader2, Eye, KeyRound, LogIn,
+  ChevronLeft, ChevronRight, Loader2, Eye, KeyRound,
   Pause, Play, Trash2, Plus, X, DollarSign, TrendingDown, BarChart3, AlertTriangle, Pencil,
 } from 'lucide-react';
 
@@ -231,16 +231,9 @@ function UsersTenantsTab() {
     finally { setActionLoading(false); setTimeout(() => setFeedback(null), 3000); }
   };
 
-  const handleLoginAs = async (userId: string) => {
-    try {
-      const { data } = await api.post(`/admin/users/${userId}/login-as`);
-      const { accessToken, user } = data.data;
-      // Store in a new window/tab so admin session is preserved
-      window.open(`${window.location.origin}/app?impersonate=${accessToken}`, '_blank');
-      setFeedback(`Login-as token generated for ${user.email}`);
-      setTimeout(() => setFeedback(null), 3000);
-    } catch (err) { console.error(err); }
-  };
+  // FR-ADM-06: "Login as" / impersonation has been removed by design.
+  // Super Admin must not be able to log in as a tenant user. Use "Reset Password"
+  // if assistance with a tenant account is required.
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -324,11 +317,8 @@ function UsersTenantsTab() {
                                 <p className="text-xs text-gray-500">{u.email} · {u.role}</p>
                               </div>
                               <div className="flex gap-1">
-                                <Button size="sm" variant="ghost" onClick={() => { setResetPwUserId(u.id); setNewPassword(''); }}>
+                                <Button size="sm" variant="ghost" onClick={() => { setResetPwUserId(u.id); setNewPassword(''); }} title="Reset password">
                                   <KeyRound className="h-3 w-3" />
-                                </Button>
-                                <Button size="sm" variant="ghost" onClick={() => handleLoginAs(u.id)}>
-                                  <LogIn className="h-3 w-3" />
                                 </Button>
                               </div>
                             </div>
