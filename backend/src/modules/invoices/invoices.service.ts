@@ -139,17 +139,28 @@ export class InvoicesService {
 
     // Use the invoice's own accountId (works for both account_owner and super_admin)
     const aid = invoice.accountId;
-    if (!invoice) throw new AppError(404, 'Invoice not found', 'NOT_FOUND');
     if (invoice.status === 'paid') throw new AppError(400, 'Invoice already paid', 'ALREADY_PAID');
     if (invoice.status === 'cancelled') throw new AppError(400, 'Invoice is cancelled', 'INVOICE_CANCELLED');
 
-    // Re-use existing pending link or create a new Stripe session
+    // Re-use existing pending link — but only if its URL is valid.
+    // A link with a null URL is corrupted (prior failed session); invalidate it so a
+    // fresh Stripe session is created below.
     let paymentLink = await prisma.paymentLink.findFirst({
       where: { invoiceId, status: 'pending' },
     });
 
+    if (paymentLink && !paymentLink.url) {
+      await prisma.paymentLink.update({
+        where: { id: paymentLink.id },
+        data: { status: 'failed' },
+      });
+      paymentLink = null;
+    }
+
     if (!paymentLink) {
-      const appUrl = process.env.CORS_ORIGIN || 'https://sparkly-kohl.vercel.app';
+      // APP_URL is the canonical public URL of this deployment.
+      // Set it in Vercel env vars to 'https://sparkly-kohl.vercel.app'.
+      const appUrl = process.env.APP_URL || 'https://sparkly-kohl.vercel.app';
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -173,11 +184,15 @@ export class InvoicesService {
         customer_email: recipientEmail,
       });
 
+      if (!session.url) {
+        throw new AppError(502, 'Stripe did not return a checkout URL. Please try again.', 'STRIPE_URL_MISSING');
+      }
+
       paymentLink = await prisma.paymentLink.create({
         data: {
           invoiceId,
           stripeSessionId: session.id,
-          url: session.url!,
+          url: session.url,
           status: 'pending',
         },
       });
@@ -189,13 +204,20 @@ export class InvoicesService {
       });
     }
 
+    // Final guard: should never happen after the checks above, but prevents
+    // a null URL from reaching the email template (which causes Brevo to
+    // reject the request with "Not a valid URL").
+    if (!paymentLink.url) {
+      throw new AppError(500, 'Payment link URL is missing. Please try again.', 'PAYMENT_LINK_URL_MISSING');
+    }
+
     // Send email with payment link
     await sendPaymentLinkEmail({
       to: recipientEmail,
       invoiceNo: invoice.invoiceNo,
       customerName: invoice.customer.name,
       total: invoice.total.toNumber(),
-      paymentUrl: paymentLink.url!,
+      paymentUrl: paymentLink.url,
       dueDate: new Date(invoice.dueDate).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' }),
     });
 
@@ -220,12 +242,22 @@ export class InvoicesService {
 
     const aid = invoice.accountId;
 
+    // Re-use existing pending link — but only if its URL is valid.
+    // A link with a null URL is corrupted; invalidate it so a fresh session is created.
     let paymentLink = await prisma.paymentLink.findFirst({
       where: { invoiceId, status: 'pending' },
     });
 
+    if (paymentLink && !paymentLink.url) {
+      await prisma.paymentLink.update({
+        where: { id: paymentLink.id },
+        data: { status: 'failed' },
+      });
+      paymentLink = null;
+    }
+
     if (!paymentLink) {
-      const appUrl = process.env.CORS_ORIGIN || 'https://sparkly-kohl.vercel.app';
+      const appUrl = process.env.APP_URL || 'https://sparkly-kohl.vercel.app';
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -248,11 +280,15 @@ export class InvoicesService {
         metadata: { invoiceId, invoiceNo: invoice.invoiceNo, accountId: aid },
       });
 
+      if (!session.url) {
+        throw new AppError(502, 'Stripe did not return a checkout URL. Please try again.', 'STRIPE_URL_MISSING');
+      }
+
       paymentLink = await prisma.paymentLink.create({
         data: {
           invoiceId,
           stripeSessionId: session.id,
-          url: session.url!,
+          url: session.url,
           status: 'pending',
         },
       });

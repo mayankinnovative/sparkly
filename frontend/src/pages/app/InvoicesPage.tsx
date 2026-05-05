@@ -304,6 +304,7 @@ export function InvoicesPage() {
   const [sendLinkInvoice, setSendLinkInvoice] = useState<Invoice | null>(null);
   const [paymentBanner, setPaymentBanner] = useState<'success' | 'cancelled' | null>(null);
   const [generatingLinkId, setGeneratingLinkId] = useState<string | null>(null);
+  const [openLinkError, setOpenLinkError] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -313,17 +314,25 @@ export function InvoicesPage() {
   };
 
   const handleOpenLink = async (inv: Invoice) => {
-    if (inv.paymentLink?.url) {
-      window.open(inv.paymentLink.url, '_blank');
+    setOpenLinkError(null);
+    // Use the stored URL if it is a valid absolute URL
+    const storedUrl = inv.paymentLink?.url;
+    if (storedUrl && storedUrl.startsWith('https://')) {
+      window.open(storedUrl, '_blank');
       return;
     }
     setGeneratingLinkId(inv.id);
     try {
       const { data } = await api.post(`/invoices/${inv.id}/generate-link`);
       refreshInvoices();
-      if (data.data?.url) window.open(data.data.url, '_blank');
-    } catch {
-      // refreshInvoices will still update list
+      const url = data.data?.url;
+      if (url && url.startsWith('https://')) {
+        window.open(url, '_blank');
+      } else {
+        setOpenLinkError('Payment link could not be generated. Please try again.');
+      }
+    } catch (err: any) {
+      setOpenLinkError(err?.response?.data?.message || 'Failed to generate payment link. Please try again.');
     } finally {
       setGeneratingLinkId(null);
     }
@@ -407,6 +416,18 @@ export function InvoicesPage() {
             <span className="text-sm font-medium">{t('paymentCancelled', lang)}</span>
           </div>
           <Button size="sm" variant="ghost" className="text-amber-700 hover:text-amber-900 h-7 px-2" onClick={() => setPaymentBanner(null)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
+      {openLinkError && (
+        <div className="flex items-center justify-between gap-3 rounded-lg bg-red-50 border border-red-200 px-4 py-3">
+          <div className="flex items-center gap-2 text-red-800">
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            <span className="text-sm font-medium">{openLinkError}</span>
+          </div>
+          <Button size="sm" variant="ghost" className="text-red-700 hover:text-red-900 h-7 px-2" onClick={() => setOpenLinkError(null)}>
             <X className="h-4 w-4" />
           </Button>
         </div>
