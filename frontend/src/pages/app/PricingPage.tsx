@@ -333,7 +333,9 @@ export function PricingPage() {
   const handleOpenPortal = async () => {
     setOpeningPortal(true);
     try {
-      const res = await api.post('/subscriptions/portal');
+      const res = await api.post('/subscriptions/portal', {
+        returnUrl: `${window.location.origin}/app/pricing`,
+      });
       const portalUrl = res.data?.data?.portalUrl;
       if (portalUrl) {
         window.location.href = portalUrl;
