@@ -42,6 +42,10 @@ export class ExpensesService {
 
     const data: any = { ...input };
     if (input.date) data.date = new Date(input.date);
+    // Allow explicit null to clear the receipt image
+    if (Object.prototype.hasOwnProperty.call(input, 'receiptImage')) {
+      data.receiptImage = input.receiptImage ?? null;
+    }
 
     return prisma.expense.update({ where: { id }, data });
   }

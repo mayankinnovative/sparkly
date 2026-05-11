@@ -10,6 +10,20 @@ import { nowLocalInput } from '@/lib/timezone';
 import type { Customer, Language } from '@/types';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
+const JOB_EXTRAS = [
+  'Pets area',
+  'Inside Fridge',
+  'Inside Oven / Dishwasher',
+  'Inside Washer & Dryer',
+  'Interior Windows',
+  'Exterior Windows',
+  'Slide Doors / Glass',
+  'Carpet Shampoo',
+  'Stairs / Steps',
+  'Sweep Balcony',
+  'Extra Bathroom',
+];
+
 export function LogJobPage() {
   const { language, selectedAccountId } = useAuthStore();
   const lang = language as Language;
@@ -22,12 +36,19 @@ export function LogJobPage() {
     price: '',
     notes: '',
   });
+  const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     api.get('/customers').then(({ data }) => setCustomers(data.data)).catch(console.error);
   }, [selectedAccountId]);
+
+  const toggleExtra = (extra: string) => {
+    setSelectedExtras((prev) =>
+      prev.includes(extra) ? prev.filter((e) => e !== extra) : [...prev, extra],
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,9 +59,11 @@ export function LogJobPage() {
         ...form,
         price: parseFloat(form.price),
         scheduledDate: new Date(form.scheduledDate).toISOString(),
+        extras: selectedExtras,
       });
       setSuccess(true);
       setForm({ customerId: '', title: '', description: '', scheduledDate: nowLocalInput(), price: '', notes: '' });
+      setSelectedExtras([]);
     } catch (err) {
       console.error(err);
     } finally {
@@ -114,6 +137,24 @@ export function LogJobPage() {
                 />
               </div>
             </div>
+            {/* ─── Extras ─────────────────────────────────────────────── */}
+            <div className="space-y-2">
+              <Label>{t('jobExtras', lang)}</Label>
+              <div className="grid grid-cols-2 gap-2 p-3 border rounded-md bg-gray-50">
+                {JOB_EXTRAS.map((extra) => (
+                  <label key={extra} className="flex items-center gap-2 cursor-pointer select-none text-sm">
+                    <input
+                      type="checkbox"
+                      checked={selectedExtras.includes(extra)}
+                      onChange={() => toggleExtra(extra)}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    {extra}
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label>{t('notes', lang)}</Label>
               <textarea

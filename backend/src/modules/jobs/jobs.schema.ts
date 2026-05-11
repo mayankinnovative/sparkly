@@ -14,6 +14,8 @@ export const createJobSchema = z.object({
   staffCount: z.number().int().min(1).default(1),
   status: z.enum(['pending', 'in_progress', 'completed', 'cancelled']).default('pending'),
   notes: z.string().max(2000).optional().nullable(),
+  // Cleaning extras (e.g. "Inside Fridge", "Carpet shampoo", etc.)
+  extras: z.array(z.string().max(100)).default([]),
 });
 
 export const updateJobSchema = createJobSchema.partial();

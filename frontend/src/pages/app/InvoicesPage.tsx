@@ -8,7 +8,7 @@ import { t } from '@/lib/i18n';
 import api from '@/lib/api';
 import type { Invoice, Language, TaxBreakdown } from '@/types';
 import { formatDateTz } from '@/lib/timezone';
-import { FileText, ExternalLink, Eye, X, Send, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, ExternalLink, Eye, X, Send, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Banknote } from 'lucide-react';
 
 const statusVariant: Record<string, 'info' | 'warning' | 'success' | 'destructive' | 'secondary'> = {
   draft: 'secondary',
@@ -136,6 +136,99 @@ function SendLinkModal({ invoice, lang, onClose, onSuccess }: {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─── ForcePaidModal ────────────────────────────────────────────────────────────
+function ForcePaidModal({ invoice, lang, onClose, onSuccess }: {
+  invoice: Invoice;
+  lang: Language;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [method, setMethod] = useState<'cash' | 'interac' | 'cheque' | 'other'>('cash');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  const handleConfirm = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      await api.post(`/invoices/${invoice.id}/force-paid`, { method });
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Failed to mark as paid. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-50 w-full max-w-md rounded-xl bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            <Banknote className="h-5 w-5 text-green-600" />
+            {t('forceMarkPaid', lang)}
+          </h2>
+          <Button size="icon" variant="ghost" onClick={onClose}><X className="h-4 w-4" /></Button>
+        </div>
+
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Invoice <span className="font-mono font-semibold">{invoice.invoiceNo}</span>
+            {' '}— <strong>${Number(invoice.total).toFixed(2)}</strong>
+          </p>
+          <p className="text-sm text-gray-500">{t('forceMarkPaidDesc', lang)}</p>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">{t('paymentMethod', lang)}</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(['cash', 'interac', 'cheque', 'other'] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMethod(m)}
+                  className={`px-3 py-2 rounded-md border text-sm font-medium capitalize transition-colors ${
+                    method === m
+                      ? 'border-green-500 bg-green-50 text-green-700'
+                      : 'border-gray-200 hover:bg-gray-50 text-gray-600'
+                  }`}
+                >
+                  {m === 'interac' ? 'Interac' : m.charAt(0).toUpperCase() + m.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+          )}
+
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" onClick={onClose} disabled={saving}>
+              {t('cancel', lang)}
+            </Button>
+            <Button
+              onClick={handleConfirm}
+              disabled={saving}
+              className="gap-2 bg-green-600 hover:bg-green-700 text-white"
+            >
+              <Banknote className="h-4 w-4" />
+              {saving ? t('loading', lang) : t('confirmMarkPaid', lang)}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -296,18 +389,20 @@ function InvoiceDetailModal({ invoiceId, lang, onClose }: { invoiceId: string; l
 }
 
 export function InvoicesPage() {
-  const { language, selectedAccountId } = useAuthStore();
+  const { language, selectedAccountId, user } = useAuthStore();
   const lang = language as Language;
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [sendLinkInvoice, setSendLinkInvoice] = useState<Invoice | null>(null);
+  const [forcePaidInvoice, setForcePaidInvoice] = useState<Invoice | null>(null);
   const [paymentBanner, setPaymentBanner] = useState<'success' | 'cancelled' | null>(null);
   const [generatingLinkId, setGeneratingLinkId] = useState<string | null>(null);
   const [openLinkError, setOpenLinkError] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const isOwner = user?.role === 'account_owner';
 
   const refreshInvoices = () => {
     api.get('/invoices').then(({ data }) => setInvoices(data.data)).catch(console.error);
@@ -505,6 +600,17 @@ export function InvoicesPage() {
                             <Send className="h-3 w-3" />
                             {inv.paymentLink?.url ? t('resendLink', lang) : t('sendPaymentLink', lang)}
                           </Button>
+                          {isOwner && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1 border-green-500 text-green-700 hover:bg-green-50"
+                              onClick={() => setForcePaidInvoice(inv)}
+                            >
+                              <Banknote className="h-3 w-3" />
+                              {t('forceMarkPaid', lang)}
+                            </Button>
+                          )}
                         </>
                       )}
                     </div>
@@ -546,6 +652,15 @@ export function InvoicesPage() {
           invoice={sendLinkInvoice}
           lang={lang}
           onClose={() => setSendLinkInvoice(null)}
+          onSuccess={refreshInvoices}
+        />
+      )}
+
+      {forcePaidInvoice && (
+        <ForcePaidModal
+          invoice={forcePaidInvoice}
+          lang={lang}
+          onClose={() => setForcePaidInvoice(null)}
           onSuccess={refreshInvoices}
         />
       )}

@@ -306,11 +306,13 @@ function UpgradeModal({
 }
 
 export function PricingPage() {
-  const { language, account } = useAuthStore();
+  const { language, account, user } = useAuthStore();
   const lang = language as Language;
   const currentPlan = account?.plan;
   const [pricing, setPricing] = useState<Record<string, number>>(defaultPricing);
   const [upgradePlan, setUpgradePlan] = useState<Plan | null>(null);
+  const [openingPortal, setOpeningPortal] = useState(false);
+  const isOwner = user?.role === 'account_owner';
 
   useEffect(() => {
     api.get('/pricing')
@@ -328,9 +330,37 @@ export function PricingPage() {
     }
   }, []);
 
+  const handleOpenPortal = async () => {
+    setOpeningPortal(true);
+    try {
+      const res = await api.post('/subscriptions/portal');
+      const portalUrl = res.data?.data?.portalUrl;
+      if (portalUrl) {
+        window.location.href = portalUrl;
+      }
+    } catch (err: any) {
+      console.error('Portal error:', err);
+    } finally {
+      setOpeningPortal(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">{t('pricing', lang)}</h1>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h1 className="text-2xl font-bold">{t('pricing', lang)}</h1>
+        {isOwner && currentPlan && currentPlan !== 'solo' && (
+          <Button
+            variant="outline"
+            className="gap-2"
+            disabled={openingPortal}
+            onClick={handleOpenPortal}
+          >
+            {openingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {t('manageSubscription', lang)}
+          </Button>
+        )}
+      </div>
 
       <div className="grid md:grid-cols-3 gap-6">
         {planMeta.map((plan) => {
@@ -374,6 +404,22 @@ export function PricingPage() {
           );
         })}
       </div>
+
+      {/* Customer Portal card — visible to account_owner only */}
+      {isOwner && (
+        <Card>
+          <CardContent className="p-6 flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <h3 className="font-semibold text-gray-800">{t('manageSubscription', lang)}</h3>
+              <p className="text-sm text-gray-500 mt-1">{t('portalDesc', lang)}</p>
+            </div>
+            <Button variant="outline" className="gap-2 shrink-0" disabled={openingPortal} onClick={handleOpenPortal}>
+              {openingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {t('openCustomerPortal', lang)}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Trial banner */}
       <Card className="bg-gradient-to-r from-sparkly-blue to-sparkly-purple">

@@ -125,4 +125,19 @@ router.post('/:id/payment-link', requireRole('account_owner'), async (req, res) 
   }
 });
 
+// Force-mark invoice as paid (cash / Interac / other non-card payment)
+router.post('/:id/force-paid', requireRole('account_owner'), async (req, res) => {
+  try {
+    const { method } = z.object({ method: z.string().max(20).default('manual') }).parse(req.body ?? {});
+    const invoice = await invoicesService.forcePaid(req.user!.accountId, req.params.id as string, method);
+    res.json(successResponse(invoice));
+  } catch (err: any) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json(errorResponse('Invalid request body', 'VALIDATION_ERROR'));
+    }
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
 export default router;

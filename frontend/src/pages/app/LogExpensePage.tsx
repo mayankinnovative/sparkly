@@ -9,7 +9,7 @@ import { t, type TranslationKey } from '@/lib/i18n';
 import api from '@/lib/api';
 import { nowLocalInput, formatDateTz } from '@/lib/timezone';
 import type { Expense, Language } from '@/types';
-import { CheckCircle2, AlertCircle, Loader2, Plus, X, Pencil, Trash2, Receipt, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Loader2, Plus, X, Pencil, Trash2, Receipt, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 
 const CATEGORIES = [
   'supplies', 'equipment', 'fuel', 'wages', 'insurance',
@@ -42,7 +42,17 @@ const CATEGORY_COLORS: Record<string, string> = {
   other: 'bg-gray-100 text-gray-700',
 };
 
-const emptyForm = { category: 'supplies', description: '', amount: '', date: nowLocalInput() };
+const emptyForm = { category: 'supplies', description: '', amount: '', date: nowLocalInput(), receiptImage: '' };
+
+// Convert file to base64 data URI
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 export function LogExpensePage() {
   const { language, selectedAccountId } = useAuthStore();
@@ -53,10 +63,12 @@ export function LogExpensePage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [filter, setFilter] = useState('');
   const [page, setPage] = useState(1);
+  const [viewReceiptUrl, setViewReceiptUrl] = useState<string | null>(null);
   const pageSize = 10;
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -84,6 +96,7 @@ export function LogExpensePage() {
 
   const resetForm = () => {
     setForm({ ...emptyForm, date: nowLocalInput() });
+    setReceiptPreview(null);
     setShowForm(false);
     setEditingId(null);
   };
@@ -121,7 +134,9 @@ export function LogExpensePage() {
       description: expense.description || '',
       amount: String(expense.amount),
       date: formatDateTz(expense.date, "yyyy-MM-dd'T'HH:mm"),
+      receiptImage: (expense as any).receiptImage || '',
     });
+    setReceiptPreview((expense as any).receiptImage || null);
     setShowForm(true);
     setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   };
@@ -206,6 +221,60 @@ export function LogExpensePage() {
                   <Input type="datetime-local" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
                 </div>
               </div>
+
+              {/* Receipt / Invoice image upload */}
+              <div className="space-y-2">
+                <Label>{t('receiptImage', lang)}</Label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    id="receipt-upload"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) {
+                        showFeedback('error', 'File too large. Maximum 5 MB.');
+                        return;
+                      }
+                      const base64 = await fileToBase64(file);
+                      setForm((prev) => ({ ...prev, receiptImage: base64 }));
+                      setReceiptPreview(base64);
+                      e.target.value = '';
+                    }}
+                  />
+                  <label
+                    htmlFor="receipt-upload"
+                    className="flex items-center gap-2 cursor-pointer px-3 py-2 border rounded-md text-sm hover:bg-gray-50 transition-colors"
+                  >
+                    <ImageIcon className="h-4 w-4 text-gray-500" />
+                    {receiptPreview ? t('changeReceipt', lang) : t('uploadReceipt', lang)}
+                  </label>
+                  {receiptPreview && (
+                    <div className="flex items-center gap-2">
+                      {receiptPreview.startsWith('data:image') ? (
+                        <img
+                          src={receiptPreview}
+                          alt="receipt"
+                          className="h-12 w-12 object-cover rounded border cursor-pointer"
+                          onClick={() => setViewReceiptUrl(receiptPreview)}
+                        />
+                      ) : (
+                        <span className="text-sm text-gray-500">PDF attached</span>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => { setReceiptPreview(null); setForm((prev) => ({ ...prev, receiptImage: '' })); }}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
               <div className="flex gap-2">
                 <Button type="submit" disabled={saving}>
                   {saving && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -256,6 +325,16 @@ export function LogExpensePage() {
                     <td className="px-4 py-3 text-sm text-right font-semibold">${Number(exp.amount).toFixed(2)}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {(exp as any).receiptImage && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title={t('viewReceipt', lang)}
+                            onClick={() => setViewReceiptUrl((exp as any).receiptImage)}
+                          >
+                            <ImageIcon className="h-3 w-3" />
+                          </Button>
+                        )}
                         <Button size="sm" variant="outline" onClick={() => handleEdit(exp)}>
                           <Pencil className="h-3 w-3 mr-1" /> {t('edit', lang)}
                         </Button>
@@ -297,6 +376,40 @@ export function LogExpensePage() {
         onConfirm={handleDelete}
         onCancel={() => setDeleteId(null)}
       />
+
+      {/* Receipt image lightbox */}
+      {viewReceiptUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={() => setViewReceiptUrl(null)}
+        >
+          <div className="relative max-w-3xl max-h-[90vh] overflow-auto rounded-xl bg-white p-2 shadow-2xl">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="absolute top-2 right-2 z-10 bg-white/80"
+              onClick={() => setViewReceiptUrl(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            {viewReceiptUrl.startsWith('data:image') || viewReceiptUrl.match(/\.(png|jpg|jpeg|webp|gif)$/i) ? (
+              <img
+                src={viewReceiptUrl}
+                alt="Receipt"
+                className="max-w-full max-h-[85vh] rounded object-contain"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <iframe
+                src={viewReceiptUrl}
+                title="Receipt"
+                className="w-full h-[80vh] rounded"
+                onClick={(e) => e.stopPropagation()}
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

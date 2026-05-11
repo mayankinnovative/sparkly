@@ -329,6 +329,43 @@ export class InvoicesService {
       }),
     ]);
   }
+
+  /**
+   * Force-mark an invoice as paid without going through Stripe.
+   * Used when the customer pays by cash or Interac.
+   * Only account_owner can call this (enforced in routes).
+   */
+  async forcePaid(accountId: string | null, invoiceId: string, method: string = 'manual') {
+    const invoice = await prisma.invoice.findFirst({
+      where: { id: invoiceId, ...tenantFilter(accountId) },
+    });
+    if (!invoice) throw new AppError(404, 'Invoice not found', 'NOT_FOUND');
+    if (invoice.status === 'paid') throw new AppError(400, 'Invoice is already paid', 'ALREADY_PAID');
+    if (invoice.status === 'cancelled') throw new AppError(400, 'Cannot mark a cancelled invoice as paid', 'INVOICE_CANCELLED');
+
+    // Update or create a payment link record as a manual record
+    const existingLink = await prisma.paymentLink.findFirst({ where: { invoiceId } });
+    if (existingLink) {
+      await prisma.paymentLink.update({
+        where: { id: existingLink.id },
+        data: { status: 'completed', method: method.substring(0, 20), sentAt: new Date() },
+      });
+    } else {
+      await prisma.paymentLink.create({
+        data: {
+          invoiceId,
+          status: 'completed',
+          method: method.substring(0, 20),
+          sentAt: new Date(),
+        },
+      });
+    }
+
+    return prisma.invoice.update({
+      where: { id: invoiceId },
+      data: { status: 'paid' },
+    });
+  }
 }
 
 export const invoicesService = new InvoicesService();

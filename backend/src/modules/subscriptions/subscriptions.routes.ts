@@ -54,4 +54,28 @@ router.post('/upgrade', authenticate, tenantScope, requireRole('account_owner'),
   }
 });
 
+// ─── Authenticated: open Stripe Customer Portal ──────────────────────────────
+router.post('/portal', authenticate, tenantScope, requireRole('account_owner'), async (req, res) => {
+  try {
+    const body = z.object({
+      returnUrl: z.string().url().optional(),
+    }).parse(req.body ?? {});
+
+    const appUrl = process.env.CORS_ORIGIN || 'http://localhost:5173';
+    const returnUrl = body.returnUrl || `${appUrl}/app/pricing`;
+
+    const result = await subscriptionsService.createPortalSession({
+      accountId: req.user!.accountId!,
+      returnUrl,
+    });
+    res.json(successResponse(result));
+  } catch (err: any) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json(errorResponse('Invalid request body', 'VALIDATION_ERROR'));
+    }
+    const status = err.statusCode || 500;
+    res.status(status).json(errorResponse(err.message, err.code));
+  }
+});
+
 export default router;

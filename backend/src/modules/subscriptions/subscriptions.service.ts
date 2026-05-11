@@ -237,8 +237,61 @@ export async function handleUpgradeCompleted(session: Stripe.Checkout.Session) {
   });
 }
 
+// ─── Stripe Customer Portal ──────────────────────────────────────────────────
+
+/**
+ * Creates a Stripe Billing Portal session so the account owner can
+ * manage their subscription (cancel, update payment method, etc.).
+ * Requires that the subscription has a stripeCustomerId already set.
+ * If not set (manual upgrade path), we create a Stripe customer on the fly.
+ */
+export async function createPortalSession(input: {
+  accountId: string;
+  returnUrl: string;
+}) {
+  const subscription = await prisma.subscription.findUnique({
+    where: { accountId: input.accountId },
+    include: { account: true },
+  });
+
+  let stripeCustomerId = subscription?.stripeCustomerId ?? null;
+
+  if (!stripeCustomerId) {
+    // Create a Stripe customer so the portal can be accessed
+    const account = subscription?.account ?? await prisma.account.findUnique({ where: { id: input.accountId } });
+    if (!account) throw new AppError(404, 'Account not found', 'ACCOUNT_NOT_FOUND');
+
+    const owner = await prisma.user.findFirst({
+      where: { accountId: input.accountId, role: 'account_owner' },
+    });
+
+    const customer = await stripe.customers.create({
+      name: account.name,
+      email: owner?.email,
+      metadata: { accountId: input.accountId },
+    });
+    stripeCustomerId = customer.id;
+
+    // Persist the customer ID so future portal requests re-use it
+    if (subscription) {
+      await prisma.subscription.update({
+        where: { accountId: input.accountId },
+        data: { stripeCustomerId },
+      });
+    }
+  }
+
+  const session = await stripe.billingPortal.sessions.create({
+    customer: stripeCustomerId,
+    return_url: input.returnUrl,
+  });
+
+  return { portalUrl: session.url };
+}
+
 export const subscriptionsService = {
   validateCoupon,
   createUpgradeCheckoutSession,
   handleUpgradeCompleted,
+  createPortalSession,
 };

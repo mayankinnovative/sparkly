@@ -228,6 +228,22 @@ const translations = {
     systemLogs: 'System Logs',
     activeSubs: 'Active Subs',
     totalRevenueAdmin: 'Total Revenue',
+    // Extras (Log Job)
+    jobExtras: 'Extras',
+    // Expense Receipt
+    receiptImage: 'Invoice / Receipt Image',
+    uploadReceipt: 'Upload Receipt',
+    changeReceipt: 'Change Receipt',
+    viewReceipt: 'View Receipt',
+    // Invoice Force Paid
+    forceMarkPaid: 'Mark as Paid',
+    forceMarkPaidDesc: 'Use this to record a payment made outside Stripe (cash, Interac, cheque, etc.).',
+    paymentMethod: 'Payment Method',
+    confirmMarkPaid: 'Confirm — Mark Paid',
+    // Stripe Customer Portal
+    manageSubscription: 'Manage Subscription',
+    openCustomerPortal: 'Open Customer Portal',
+    portalDesc: 'Cancel, update payment method, or view billing history.',
   },
   fr: {
     dashboard: 'Tableau de bord',
@@ -437,6 +453,22 @@ const translations = {
     systemLogs: 'Journaux système',
     activeSubs: 'Abonnements actifs',
     totalRevenueAdmin: 'Revenu total',
+    // Extras (Log Job)
+    jobExtras: 'Suppléments',
+    // Expense Receipt
+    receiptImage: 'Facture / Reçu (image)',
+    uploadReceipt: 'Téléverser un reçu',
+    changeReceipt: 'Changer le reçu',
+    viewReceipt: 'Voir le reçu',
+    // Invoice Force Paid
+    forceMarkPaid: 'Marquer payée',
+    forceMarkPaidDesc: 'Utilisez ceci pour enregistrer un paiement effectué hors Stripe (argent comptant, Interac, chèque, etc.).',
+    paymentMethod: 'Mode de paiement',
+    confirmMarkPaid: 'Confirmer — Marquer payée',
+    // Stripe Customer Portal
+    manageSubscription: 'Gérer l\'abonnement',
+    openCustomerPortal: 'Portail client Stripe',
+    portalDesc: 'Annuler, mettre à jour le mode de paiement ou consulter l\'historique de facturation.',
   },
 } as const;
 

@@ -8,6 +8,8 @@ export const createExpenseSchema = z.object({
   description: z.string().max(500).optional().nullable(),
   amount: z.number().positive(),
   date: z.string().datetime(),
+  // Base64 data URI or external URL for an uploaded invoice/receipt image (max ~5 MB base64)
+  receiptImage: z.string().max(8_000_000).optional().nullable(),
 });
 
 export const updateExpenseSchema = createExpenseSchema.partial();
