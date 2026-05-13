@@ -15,6 +15,7 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, data: null, message: 'Too many authentication attempts, please try again later', error: { code: 'RATE_LIMIT_EXCEEDED' } },
+  skip: (req) => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.ip ?? ''),
 });
 
 router.post(

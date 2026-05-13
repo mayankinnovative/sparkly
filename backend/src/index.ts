@@ -34,7 +34,7 @@ app.use('/api/v1/invoices/webhook', express.raw({ type: 'application/json' }));
 // ─── Global middleware ──────────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false }));
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false, skip: (req) => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.ip ?? '') }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(detectTimezone);

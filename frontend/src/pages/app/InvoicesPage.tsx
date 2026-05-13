@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { t } from '@/lib/i18n';
 import api from '@/lib/api';
 import type { Invoice, Language, TaxBreakdown } from '@/types';
 import { formatDateTz } from '@/lib/timezone';
-import { FileText, ExternalLink, Eye, X, Send, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Banknote } from 'lucide-react';
+import { FileText, ExternalLink, Eye, X, Send, CheckCircle2, AlertCircle, ChevronLeft, ChevronRight, Banknote, Download } from 'lucide-react';
 
 const statusVariant: Record<string, 'info' | 'warning' | 'success' | 'destructive' | 'secondary'> = {
   draft: 'secondary',
@@ -252,15 +252,123 @@ function InvoiceDetailModal({ invoiceId, lang, onClose }: { invoiceId: string; l
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
 
+  /** Open a dedicated print window with a styled invoice — works as "Save as PDF" via browser print dialog */
+  const handleDownload = useCallback(() => {
+    if (!invoice) return;
+    const { type, breakdown } = getTaxBreakdown(invoice);
+    const taxRows = type === 'GST_QST'
+      ? `<tr><td>TPS/GST (5%)</td><td style="text-align:right">$${Number(breakdown.gst ?? 0).toFixed(2)}</td></tr>
+         <tr><td>TVQ/QST (9.975%)</td><td style="text-align:right">$${Number(breakdown.qst ?? 0).toFixed(2)}</td></tr>`
+      : `<tr><td>HST/TVH (13%)</td><td style="text-align:right">$${Number(breakdown.hst ?? 0).toFixed(2)}</td></tr>`;
+
+    const lineItemsHtml = (invoice.lineItems ?? []).map((item) =>
+      `<tr>
+        <td>${item.description}</td>
+        <td style="text-align:center">${item.qty}</td>
+        <td style="text-align:right">$${item.rate.toFixed(2)}</td>
+        <td style="text-align:right">$${item.amount.toFixed(2)}</td>
+      </tr>`
+    ).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="${invoice.language ?? 'en'}">
+<head>
+  <meta charset="UTF-8" />
+  <title>Invoice ${invoice.invoiceNo}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 13px; color: #111; padding: 40px; max-width: 700px; margin: auto; }
+    h1 { font-size: 28px; font-weight: 800; color: #1e40af; letter-spacing: -0.5px; }
+    .subtitle { color: #6b7280; margin-top: 2px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
+    .meta { margin-bottom: 24px; }
+    .meta table { width: 100%; border-collapse: collapse; }
+    .meta td { padding: 4px 8px; }
+    .meta td:first-child { font-weight: 600; color: #6b7280; width: 140px; }
+    .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #9ca3af; letter-spacing: 0.5px; margin-bottom: 6px; }
+    table.items { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    table.items th { background: #f3f4f6; padding: 8px 10px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6b7280; }
+    table.items th:not(:first-child), table.items td:not(:first-child) { text-align: right; }
+    table.items th:nth-child(2), table.items td:nth-child(2) { text-align: center; }
+    table.items td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; }
+    .totals { margin-left: auto; width: 280px; border-top: 2px solid #e5e7eb; }
+    .totals table { width: 100%; border-collapse: collapse; }
+    .totals td { padding: 5px 0; }
+    .totals td:last-child { text-align: right; }
+    .totals .grand { font-size: 15px; font-weight: 800; border-top: 2px solid #111; padding-top: 8px; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; background: #dbeafe; color: #1d4ed8; }
+    .badge.paid { background: #dcfce7; color: #166534; }
+    .badge.overdue { background: #fef3c7; color: #92400e; }
+    .badge.cancelled { background: #fee2e2; color: #991b1b; }
+    .notes { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; margin-top: 16px; }
+    .footer { margin-top: 40px; font-size: 11px; color: #9ca3af; text-align: center; border-top: 1px solid #e5e7eb; padding-top: 16px; }
+    @media print { body { padding: 20px; } button { display: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>INVOICE</h1>
+      <p class="subtitle">${invoice.invoiceNo}</p>
+    </div>
+    <div style="text-align:right">
+      <span class="badge ${invoice.status}">${invoice.status.toUpperCase()}</span>
+    </div>
+  </div>
+
+  <div class="meta">
+    <table>
+      <tr><td>Bill To</td><td><strong>${invoice.customer?.name ?? ''}</strong>${invoice.customer?.email ? `<br>${invoice.customer.email}` : ''}${invoice.customer?.phone ? `<br>${invoice.customer.phone}` : ''}</td></tr>
+      ${invoice.issuedDate ? `<tr><td>Issue Date</td><td>${formatDateTz(invoice.issuedDate, 'MMMM d, yyyy')}</td></tr>` : ''}
+      <tr><td>Due Date</td><td>${formatDateTz(invoice.dueDate, 'MMMM d, yyyy')}</td></tr>
+    </table>
+  </div>
+
+  ${lineItemsHtml ? `<p class="section-title">Services</p>
+  <table class="items">
+    <thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead>
+    <tbody>${lineItemsHtml}</tbody>
+  </table>` : ''}
+
+  <div class="totals">
+    <table>
+      <tr><td>Subtotal</td><td>$${Number(invoice.subtotal).toFixed(2)}</td></tr>
+      ${taxRows}
+      <tr class="grand"><td>Total</td><td>$${Number(invoice.total).toFixed(2)}</td></tr>
+    </table>
+  </div>
+
+  ${invoice.notes ? `<div class="notes"><strong>Notes:</strong><br>${invoice.notes}</div>` : ''}
+  <div class="footer">Generated by Sparkly &bull; ${new Date().toLocaleDateString()}</div>
+
+  <script>window.onload = () => { window.print(); }<\/script>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank', 'width=800,height=900');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+    }
+  }, [invoice]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-50 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold">{t('invoiceDetails', lang)}</h2>
-          <Button size="icon" variant="ghost" onClick={onClose}>
-            <X className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {invoice && (
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={handleDownload}>
+                <Download className="h-3.5 w-3.5" />
+                {t('downloadInvoice', lang)}
+              </Button>
+            )}
+            <Button size="icon" variant="ghost" onClick={onClose}>
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
         {loading ? (

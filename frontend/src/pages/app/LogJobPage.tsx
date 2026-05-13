@@ -4,24 +4,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/store/auth';
-import { t } from '@/lib/i18n';
+import { t, TranslationKey } from '@/lib/i18n';
 import api from '@/lib/api';
 import { nowLocalInput } from '@/lib/timezone';
 import type { Customer, Language } from '@/types';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
-const JOB_EXTRAS = [
-  'Pets area',
-  'Inside Fridge',
-  'Inside Oven / Dishwasher',
-  'Inside Washer & Dryer',
-  'Interior Windows',
-  'Exterior Windows',
-  'Slide Doors / Glass',
-  'Carpet Shampoo',
-  'Stairs / Steps',
-  'Sweep Balcony',
-  'Extra Bathroom',
+/** Each extra has a stable DB value (English) + a translation key for display. */
+const JOB_EXTRAS: { value: string; key: TranslationKey }[] = [
+  { value: 'Pets area',                key: 'extPetsArea' },
+  { value: 'Inside Fridge',            key: 'extInsideFridge' },
+  { value: 'Inside Oven / Dishwasher', key: 'extInsideOven' },
+  { value: 'Inside Washer & Dryer',    key: 'extInsideWasher' },
+  { value: 'Interior Windows',         key: 'extInteriorWindows' },
+  { value: 'Exterior Windows',         key: 'extExteriorWindows' },
+  { value: 'Slide Doors / Glass',      key: 'extSlideDoors' },
+  { value: 'Carpet Shampoo',           key: 'extCarpetShampoo' },
+  { value: 'Stairs / Steps',           key: 'extStairs' },
+  { value: 'Sweep Balcony',            key: 'extSweepBalcony' },
+  { value: 'Extra Bathroom',           key: 'extExtraBathroom' },
 ];
 
 export function LogJobPage() {
@@ -141,15 +142,15 @@ export function LogJobPage() {
             <div className="space-y-2">
               <Label>{t('jobExtras', lang)}</Label>
               <div className="grid grid-cols-2 gap-2 p-3 border rounded-md bg-gray-50">
-                {JOB_EXTRAS.map((extra) => (
-                  <label key={extra} className="flex items-center gap-2 cursor-pointer select-none text-sm">
+                {JOB_EXTRAS.map(({ value, key }) => (
+                  <label key={value} className="flex items-center gap-2 cursor-pointer select-none text-sm">
                     <input
                       type="checkbox"
-                      checked={selectedExtras.includes(extra)}
-                      onChange={() => toggleExtra(extra)}
+                      checked={selectedExtras.includes(value)}
+                      onChange={() => toggleExtra(value)}
                       className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    {extra}
+                    {t(key, lang)}
                   </label>
                 ))}
               </div>

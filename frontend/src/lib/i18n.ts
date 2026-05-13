@@ -230,6 +230,26 @@ const translations = {
     totalRevenueAdmin: 'Total Revenue',
     // Extras (Log Job)
     jobExtras: 'Extras',
+    extPetsArea: 'Pets area',
+    extInsideFridge: 'Inside Fridge',
+    extInsideOven: 'Inside Oven / Dishwasher',
+    extInsideWasher: 'Inside Washer & Dryer',
+    extInteriorWindows: 'Interior Windows',
+    extExteriorWindows: 'Exterior Windows',
+    extSlideDoors: 'Slide Doors / Glass',
+    extCarpetShampoo: 'Carpet Shampoo',
+    extStairs: 'Stairs / Steps',
+    extSweepBalcony: 'Sweep Balcony',
+    extExtraBathroom: 'Extra Bathroom',
+    // Invoice download
+    downloadInvoice: 'Download PDF',
+    printInvoice: 'Print / Save as PDF',
+    // Payroll employee
+    addEmployee: 'Add Employee',
+    newEmployeeName: 'Employee Name',
+    addNewEmployee: 'Add New Employee (no account)',
+    selectExisting: 'Select Existing Staff',
+    employeeMode: 'Employee',
     // Expense Receipt
     receiptImage: 'Invoice / Receipt Image',
     uploadReceipt: 'Upload Receipt',
@@ -455,6 +475,26 @@ const translations = {
     totalRevenueAdmin: 'Revenu total',
     // Extras (Log Job)
     jobExtras: 'Suppléments',
+    extPetsArea: 'Zone animaux',
+    extInsideFridge: 'Intérieur réfrigérateur',
+    extInsideOven: 'Intérieur four / lave-vaisselle',
+    extInsideWasher: 'Intérieur laveuse & sécheuse',
+    extInteriorWindows: 'Fenêtres intérieures',
+    extExteriorWindows: 'Fenêtres extérieures',
+    extSlideDoors: 'Portes coulissantes / vitrées',
+    extCarpetShampoo: 'Shampooing de tapis',
+    extStairs: 'Escaliers / marches',
+    extSweepBalcony: 'Balayer balcon',
+    extExtraBathroom: 'Salle de bain supplémentaire',
+    // Invoice download
+    downloadInvoice: 'Télécharger PDF',
+    printInvoice: 'Imprimer / Enregistrer en PDF',
+    // Payroll employee
+    addEmployee: 'Ajouter employé',
+    newEmployeeName: 'Nom de l\'employé',
+    addNewEmployee: 'Ajouter nouvel employé (sans compte)',
+    selectExisting: 'Sélectionner personnel existant',
+    employeeMode: 'Employé',
     // Expense Receipt
     receiptImage: 'Facture / Reçu (image)',
     uploadReceipt: 'Téléverser un reçu',

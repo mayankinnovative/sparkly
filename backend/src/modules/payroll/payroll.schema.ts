@@ -1,7 +1,12 @@
 import { z } from 'zod';
 
-export const createPayrollEntrySchema = z.object({
-  userId: z.string().uuid(),
+// Accept EITHER a userId (existing staff) OR an employeeName (new employee without an account).
+const employeeIdentifier = z.union([
+  z.object({ userId: z.string().uuid(), employeeName: z.undefined().optional() }),
+  z.object({ userId: z.undefined().optional(), employeeName: z.string().min(1).max(255) }),
+]);
+
+export const createPayrollEntrySchema = employeeIdentifier.and(z.object({
   payPeriodStart: z.string().datetime(),
   payPeriodEnd: z.string().datetime(),
   hours: z.number().min(0).default(0),
@@ -13,7 +18,7 @@ export const createPayrollEntrySchema = z.object({
   vacationRate: z.number().min(0).max(1).default(0.04),
   payType: z.enum(['hourly', 'flat', 'salary']).default('hourly'),
   province: z.enum(['QC', 'ON']),
-});
+}));
 
 export const updatePayrollEntrySchema = z.object({
   hours: z.number().min(0).optional(),

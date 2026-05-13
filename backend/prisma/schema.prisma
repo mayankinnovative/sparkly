@@ -255,7 +255,8 @@ model RecurringJob {
 model PayrollEntry {
   id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   accountId           String   @map("account_id") @db.Uuid
-  userId              String   @map("user_id") @db.Uuid
+  userId              String?  @map("user_id") @db.Uuid
+  employeeName        String?  @map("employee_name") @db.VarChar(255)
   hours               Decimal  @db.Decimal(8, 2)
   hourlyRate          Decimal  @map("hourly_rate") @db.Decimal(10, 2)
   flatPay             Decimal  @default(0) @map("flat_pay") @db.Decimal(12, 2)
@@ -277,7 +278,7 @@ model PayrollEntry {
   createdAt           DateTime @default(now()) @map("created_at")
 
   account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   @@index([accountId, payPeriodStart])
   @@map("payroll_entries")

@@ -50,6 +50,7 @@ export interface Job {
   price: number;
   status: JobStatus;
   notes?: string | null;
+  extras?: string[];
   customer?: { id: string; name: string };
   assignee?: { id: string; firstName: string; lastName: string } | null;
 }

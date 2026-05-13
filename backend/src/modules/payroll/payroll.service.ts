@@ -33,16 +33,21 @@ function computeGross(input: {
 /** Flatten DB record into a frontend-friendly shape. */
 function shapeEntry(e: any) {
   const b = (e.deductionBreakdown ?? {}) as Record<string, number>;
+  // Resolve display name: prefer linked user, fall back to stored employeeName
+  const resolvedName = e.user
+    ? `${e.user.firstName ?? ''} ${e.user.lastName ?? ''}`.trim()
+    : (e.employeeName ?? 'Unknown');
   return {
     id: e.id,
     userId: e.userId,
     user: e.user
       ? {
           id: e.user.id,
-          fullName: `${e.user.firstName ?? ''} ${e.user.lastName ?? ''}`.trim(),
+          fullName: resolvedName,
           role: e.user.role,
         }
-      : undefined,
+      : { id: null as any, fullName: resolvedName, role: 'staff' as const },
+    employeeName: e.employeeName ?? undefined,
     payType: e.payType,
     hours: Number(e.hours),
     hourlyRate: Number(e.hourlyRate),
@@ -100,11 +105,18 @@ export class PayrollService {
   async create(accountId: string | null, input: CreatePayrollEntryInput) {
     const aid = requireAccountId(accountId);
 
-    // FR-PAY-12: validate target user belongs to the same account.
-    const user = await prisma.user.findFirst({
-      where: { id: input.userId, accountId: aid, isActive: true },
-    });
-    if (!user) throw new AppError(404, 'User not found in this account', 'USER_NOT_FOUND');
+    let resolvedUserId: string | null = null;
+
+    if (input.userId) {
+      // FR-PAY-12: validate target user belongs to the same account.
+      const user = await prisma.user.findFirst({
+        where: { id: input.userId, accountId: aid, isActive: true },
+      });
+      if (!user) throw new AppError(404, 'User not found in this account', 'USER_NOT_FOUND');
+      resolvedUserId = input.userId;
+    } else if (!input.employeeName?.trim()) {
+      throw new AppError(400, 'Either userId or employeeName is required', 'MISSING_EMPLOYEE');
+    }
 
     const grossPay = computeGross(input);
     if (grossPay <= 0) {
@@ -128,7 +140,8 @@ export class PayrollService {
     const created = await prisma.payrollEntry.create({
       data: {
         accountId: aid,
-        userId: input.userId,
+        userId: resolvedUserId,
+        employeeName: resolvedUserId ? null : (input.employeeName?.trim() ?? null),
         payPeriodStart: new Date(input.payPeriodStart),
         payPeriodEnd: new Date(input.payPeriodEnd),
         hours: input.hours,

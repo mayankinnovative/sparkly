@@ -6,11 +6,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useAuthStore } from '@/store/auth';
-import { t } from '@/lib/i18n';
+import { t, TranslationKey } from '@/lib/i18n';
 import api from '@/lib/api';
 import type { Job, Customer, Language } from '@/types';
 import { formatDateTz } from '@/lib/timezone';
 import { CheckCircle2, Clock, XCircle, Play, Pencil, Trash2, X, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const JOB_EXTRAS: { value: string; key: TranslationKey }[] = [
+  { value: 'Pets area',                key: 'extPetsArea' },
+  { value: 'Inside Fridge',            key: 'extInsideFridge' },
+  { value: 'Inside Oven / Dishwasher', key: 'extInsideOven' },
+  { value: 'Inside Washer & Dryer',    key: 'extInsideWasher' },
+  { value: 'Interior Windows',         key: 'extInteriorWindows' },
+  { value: 'Exterior Windows',         key: 'extExteriorWindows' },
+  { value: 'Slide Doors / Glass',      key: 'extSlideDoors' },
+  { value: 'Carpet Shampoo',           key: 'extCarpetShampoo' },
+  { value: 'Stairs / Steps',           key: 'extStairs' },
+  { value: 'Sweep Balcony',            key: 'extSweepBalcony' },
+  { value: 'Extra Bathroom',           key: 'extExtraBathroom' },
+];
 
 const statusConfig: Record<string, { variant: 'info' | 'warning' | 'success' | 'destructive'; icon: React.ElementType }> = {
   pending: { variant: 'info', icon: Clock },
@@ -39,6 +53,7 @@ export function AllJobsPage() {
     status: 'pending' as string,
     notes: '',
   });
+  const [editExtras, setEditExtras] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
@@ -66,6 +81,7 @@ export function AllJobsPage() {
 
   const handleEdit = (job: Job) => {
     setEditingJob(job);
+    setEditExtras(Array.isArray(job.extras) ? job.extras : []);
     setEditForm({
       customerId: job.customerId || '',
       title: job.title || '',
@@ -77,6 +93,10 @@ export function AllJobsPage() {
     });
   };
 
+  const toggleEditExtra = (val: string) => {
+    setEditExtras((prev) => prev.includes(val) ? prev.filter((e) => e !== val) : [...prev, val]);
+  };
+
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingJob) return;
@@ -84,6 +104,7 @@ export function AllJobsPage() {
     try {
       await api.put(`/jobs/${editingJob.id}`, {
         ...editForm,
+        extras: editExtras,
         price: parseFloat(editForm.price),
         scheduledDate: new Date(editForm.scheduledDate).toISOString(),
       });
@@ -217,6 +238,23 @@ export function AllJobsPage() {
                     className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px] resize-y"
                   />
                 </div>
+                {/* ─── Extras ──────────────────────────────────────────── */}
+                <div className="space-y-2 col-span-2">
+                  <Label>{t('jobExtras', lang)}</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 border rounded-md bg-gray-50">
+                    {JOB_EXTRAS.map(({ value, key }) => (
+                      <label key={value} className="flex items-center gap-2 cursor-pointer select-none text-sm">
+                        <input
+                          type="checkbox"
+                          checked={editExtras.includes(value)}
+                          onChange={() => toggleEditExtra(value)}
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        {t(key, lang)}
+                      </label>
+                    ))}
+                  </div>
+                </div>
               </div>
               <div className="flex gap-2">
                 <Button type="submit" disabled={saving}>
@@ -255,7 +293,21 @@ export function AllJobsPage() {
                 return (
                   <tr key={job.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm font-medium">{job.customer?.name}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{job.description || job.title}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">
+                      <div>{job.description || job.title}</div>
+                      {Array.isArray(job.extras) && job.extras.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {job.extras.map((ex) => {
+                            const found = JOB_EXTRAS.find((e) => e.value === ex);
+                            return (
+                              <span key={ex} className="inline-block rounded bg-blue-50 border border-blue-200 px-1.5 py-0.5 text-xs text-blue-700">
+                                {found ? t(found.key, lang) : ex}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm text-gray-500">
                       {formatDateTz(job.scheduledDate, 'MMM d, yyyy')}
                     </td>

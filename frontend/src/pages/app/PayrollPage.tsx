@@ -29,6 +29,8 @@ interface RemittanceSummary {
 
 interface FormState {
   userId: string;
+  employeeName: string;          // used when adding a new employee without an account
+  employeeMode: 'select' | 'new'; // 'select' = existing staff, 'new' = name-only
   payPeriodStart: string;
   payPeriodEnd: string;
   hours: string;
@@ -54,6 +56,8 @@ function emptyForm(province: 'QC' | 'ON'): FormState {
   const today = todayIso();
   return {
     userId: '',
+    employeeName: '',
+    employeeMode: 'select',
     payPeriodStart: today,
     payPeriodEnd: today,
     hours: '0',
@@ -116,14 +120,17 @@ export function PayrollPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
-    if (!form.userId) {
+    if (form.employeeMode === 'select' && !form.userId) {
       setFormError('Please select an employee.');
+      return;
+    }
+    if (form.employeeMode === 'new' && !form.employeeName.trim()) {
+      setFormError('Please enter the employee name.');
       return;
     }
     setSubmitting(true);
     try {
-      await api.post('/payroll', {
-        userId: form.userId,
+      const payload: Record<string, any> = {
         payPeriodStart: isoStart(form.payPeriodStart),
         payPeriodEnd: isoStart(form.payPeriodEnd),
         hours: Number(form.hours) || 0,
@@ -135,7 +142,13 @@ export function PayrollPage() {
         vacationRate: Number(form.vacationRate) || 0,
         payType: form.payType,
         province: form.province,
-      });
+      };
+      if (form.employeeMode === 'select') {
+        payload.userId = form.userId;
+      } else {
+        payload.employeeName = form.employeeName.trim();
+      }
+      await api.post('/payroll', payload);
       setShowForm(false);
       reload();
     } catch (err: any) {
@@ -307,23 +320,58 @@ export function PayrollPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-6 max-h-[70vh] overflow-y-auto">
                 <div className="sm:col-span-2">
-                  <Label>Employee</Label>
-                  <select
-                    className="w-full border rounded px-3 py-2 mt-1"
-                    value={form.userId}
-                    onChange={(e) => setForm({ ...form, userId: e.target.value })}
-                  >
-                    <option value="">— Select an employee —</option>
-                    {staff.map((s) => (
-                      <option key={s.id} value={s.id}>{s.fullName} ({s.role})</option>
-                    ))}
-                  </select>
-                  {staff.length === 0 && (
-                    <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-                      No employees yet. Add a staff member from the Users API
-                      (POST&nbsp;/users) before creating a payroll entry — or run an estimate
-                      against the account owner once their record is loaded.
-                    </p>
+                  <Label>{t('employeeMode', lang)}</Label>
+                  <div className="flex gap-2 mt-1 mb-3">
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, employeeMode: 'select', employeeName: '' })}
+                      className={`flex-1 rounded border px-3 py-2 text-sm font-medium transition-colors ${form.employeeMode === 'select' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                    >
+                      {t('selectExisting', lang)}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, employeeMode: 'new', userId: '' })}
+                      className={`flex-1 rounded border px-3 py-2 text-sm font-medium transition-colors ${form.employeeMode === 'new' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                    >
+                      {t('addNewEmployee', lang)}
+                    </button>
+                  </div>
+
+                  {form.employeeMode === 'select' ? (
+                    <>
+                      <Label>{t('employee', lang)}</Label>
+                      <select
+                        className="w-full border rounded px-3 py-2 mt-1"
+                        value={form.userId}
+                        onChange={(e) => setForm({ ...form, userId: e.target.value })}
+                      >
+                        <option value="">— Select an employee —</option>
+                        {staff.map((s) => (
+                          <option key={s.id} value={s.id}>{s.fullName} ({s.role})</option>
+                        ))}
+                      </select>
+                      {staff.length === 0 && (
+                        <p className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+                          No staff accounts found. You can still add a payroll entry by switching to "Add New Employee" above.
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <Label>{t('newEmployeeName', lang)}</Label>
+                      <input
+                        type="text"
+                        className="w-full border rounded px-3 py-2 mt-1 text-sm"
+                        placeholder="e.g. Jean-Pierre Tremblay"
+                        value={form.employeeName}
+                        onChange={(e) => setForm({ ...form, employeeName: e.target.value })}
+                        autoFocus
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        This employee doesn't need a Sparkly account. You can give them one later if needed.
+                      </p>
+                    </>
                   )}
                 </div>
                 <div>
@@ -395,7 +443,7 @@ export function PayrollPage() {
                 <Button type="button" variant="ghost" onClick={() => setShowForm(false)} disabled={submitting}>
                   {t('cancel', lang)}
                 </Button>
-                <Button type="submit" disabled={submitting || !form.userId}>
+                <Button type="submit" disabled={submitting || (form.employeeMode === 'select' && !form.userId) || (form.employeeMode === 'new' && !form.employeeName.trim())}>
                   {submitting ? t('loading', lang) : t('create', lang)}
                 </Button>
               </div>
